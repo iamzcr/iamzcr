@@ -1,0 +1,90 @@
+<script setup lang="ts">
+import { ref, onMounted, h } from 'vue'
+import { NDataTable, NButton, NPopconfirm, NSpace, NModal, NForm, NFormItem, NInput, NInputNumber, NSwitch } from 'naive-ui'
+import { tagsApi } from '../api'
+
+const tags = ref<any[]>([])
+const loading = ref(false)
+const showModal = ref(false)
+const editingTag = ref({ id: 0, type: '', mark: '', author: '', name: '', weight: 0, status: 1, is_hot: 0 })
+
+const columns = [
+  { title: 'ID', key: 'id', width: 60 },
+  { title: '名称', key: 'name' },
+  { title: '标识', key: 'mark' },
+  { title: '类型', key: 'type' },
+  { title: '权重', key: 'weight', width: 60 },
+  { title: '热门', key: 'is_hot', width: 60 },
+  { title: '操作', key: 'actions', width: 180, render: (row: any) => 
+    h(NSpace, {}, () => [
+      h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑'),
+      h(NPopconfirm, { onPositiveClick: () => deleteTag(row.id) }, 
+        () => h(NButton, { size: 'small', type: 'error' }, () => '删除'))
+    ])
+  }
+]
+
+async function loadTags() {
+  loading.value = true
+  try {
+    const res = await tagsApi.list()
+    tags.value = res.data.data
+  } finally {
+    loading.value = false
+  }
+}
+
+async function saveTag() {
+  if (editingTag.value.id) {
+    await tagsApi.update(editingTag.value.id, editingTag.value)
+  } else {
+    await tagsApi.create(editingTag.value)
+  }
+  showModal.value = false
+  loadTags()
+}
+
+function openEdit(row?: any) {
+  editingTag.value = row ? { ...row } : { id: 0, type: '', mark: '', author: '', name: '', weight: 0, status: 1, is_hot: 0 }
+  showModal.value = true
+}
+
+async function deleteTag(id: number) {
+  await tagsApi.delete(id)
+  loadTags()
+}
+
+onMounted(loadTags)
+</script>
+
+<template>
+  <div>
+    <div style="margin-bottom: 16px">
+      <n-button type="primary" @click="openEdit()">新建标签</n-button>
+    </div>
+    <n-data-table :columns="columns" :data="tags" :loading="loading" />
+    <n-modal v-model:show="showModal" preset="card" title="标签管理" style="width: 500px">
+      <n-form :model="editingTag">
+        <n-form-item label="名称">
+          <n-input v-model:value="editingTag.name" />
+        </n-form-item>
+        <n-form-item label="标识">
+          <n-input v-model:value="editingTag.mark" />
+        </n-form-item>
+        <n-form-item label="类型">
+          <n-input v-model:value="editingTag.type" />
+        </n-form-item>
+        <n-form-item label="权重">
+          <n-input-number v-model:value="editingTag.weight" :min="0" />
+        </n-form-item>
+        <n-form-item label="热门">
+          <n-switch v-model:value="editingTag.is_hot" :checked-value="1" :unchecked-value="0" />
+        </n-form-item>
+      </n-form>
+      <template #footer>
+        <n-button @click="showModal = false">取消</n-button>
+        <n-button type="primary" @click="saveTag">保存</n-button>
+      </template>
+    </n-modal>
+  </div>
+</template>

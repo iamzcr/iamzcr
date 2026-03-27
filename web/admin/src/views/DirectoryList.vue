@@ -1,0 +1,105 @@
+<script setup lang="ts">
+import { ref, onMounted, h } from 'vue'
+import { NDataTable, NButton, NPopconfirm, NSpace, NModal, NForm, NFormItem, NInput, NInputNumber, NSelect } from 'naive-ui'
+import { directoryApi, categoryApi } from '../api'
+
+const directories = ref<any[]>([])
+const categories = ref<any[]>([])
+const loading = ref(false)
+const showModal = ref(false)
+const editingDirectory = ref({ id: 0, cid: 0, type: '', parent: '', mark: '', author: '', name: '', weight: 0, status: 1 })
+
+const columns = [
+  { title: 'ID', key: 'id', width: 60 },
+  { title: '名称', key: 'name' },
+  { title: '分类', key: 'cid', width: 100, render: (row: any) => {
+    const cat = categories.value.find(c => c.id === row.cid)
+    return cat ? cat.name : '-'
+  }},
+  { title: '标识', key: 'mark' },
+  { title: '类型', key: 'type' },
+  { title: '权重', key: 'weight', width: 60 },
+  { title: '操作', key: 'actions', width: 180, render: (row: any) => 
+    h(NSpace, {}, () => [
+      h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑'),
+      h(NPopconfirm, { onPositiveClick: () => deleteDirectory(row.id) }, 
+        () => h(NButton, { size: 'small', type: 'error' }, () => '删除'))
+    ])
+  }
+]
+
+async function loadDirectories() {
+  loading.value = true
+  try {
+    const res = await directoryApi.list()
+    directories.value = res.data.data
+  } finally {
+    loading.value = false
+  }
+}
+
+async function loadCategories() {
+  const res = await categoryApi.list()
+  categories.value = res.data.data
+}
+
+async function saveDirectory() {
+  if (editingDirectory.value.id) {
+    await directoryApi.update(editingDirectory.value.id, editingDirectory.value)
+  } else {
+    await directoryApi.create(editingDirectory.value)
+  }
+  showModal.value = false
+  loadDirectories()
+}
+
+function openEdit(row?: any) {
+  editingDirectory.value = row ? { ...row } : { id: 0, cid: 0, type: '', parent: '', mark: '', author: '', name: '', weight: 0, status: 1 }
+  showModal.value = true
+}
+
+async function deleteDirectory(id: number) {
+  await directoryApi.delete(id)
+  loadDirectories()
+}
+
+onMounted(() => {
+  loadDirectories()
+  loadCategories()
+})
+</script>
+
+<template>
+  <div>
+    <div style="margin-bottom: 16px">
+      <n-button type="primary" @click="openEdit()">新建目录</n-button>
+    </div>
+    <n-data-table :columns="columns" :data="directories" :loading="loading" />
+    <n-modal v-model:show="showModal" preset="card" title="目录管理" style="width: 500px">
+      <n-form :model="editingDirectory">
+        <n-form-item label="所属分类">
+          <n-select v-model:value="editingDirectory.cid" :options="categories.map(c => ({ label: c.name, value: c.id }))" placeholder="选择分类" clearable />
+        </n-form-item>
+        <n-form-item label="名称">
+          <n-input v-model:value="editingDirectory.name" />
+        </n-form-item>
+        <n-form-item label="标识">
+          <n-input v-model:value="editingDirectory.mark" />
+        </n-form-item>
+        <n-form-item label="类型">
+          <n-input v-model:value="editingDirectory.type" />
+        </n-form-item>
+        <n-form-item label="父级">
+          <n-input v-model:value="editingDirectory.parent" />
+        </n-form-item>
+        <n-form-item label="权重">
+          <n-input-number v-model:value="editingDirectory.weight" :min="0" />
+        </n-form-item>
+      </n-form>
+      <template #footer>
+        <n-button @click="showModal = false">取消</n-button>
+        <n-button type="primary" @click="saveDirectory">保存</n-button>
+      </template>
+    </n-modal>
+  </div>
+</template>

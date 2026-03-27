@@ -1,0 +1,55 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+admin.exe
+frontend.exe
+
+# Go workspace
+go.work
+go.work.sum
+
+# Test binary
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+build/
+*.log
+
+# Node modules (for frontend)
+web/admin/node_modules/
+web/frontend/node_modules/
+
+# Vite cache
+web/admin/.vite/
+web/frontend/.vite/
+
+# Temporary files
+tmp/
+temp/
+*.tmp

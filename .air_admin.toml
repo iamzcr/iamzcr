@@ -1,0 +1,19 @@
+# Go hot reload with air - Admin server
+
+[build]
+  cmd = "go build -o cmd/admin/tmp/admin.exe ./cmd/admin"
+  bin = "cmd/admin/tmp/admin.exe"
+  include_ext = ["go"]
+  exclude_dir = ["tmp", "vendor", "web", "cmd/frontend"]
+
+[run]
+  cmd = "./cmd/admin/tmp/admin.exe"
+
+[log]
+  time = true
+
+[screen]
+  clear_on_rebuild = true
+
+[misc]
+  clean_on_exit = true

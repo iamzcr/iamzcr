@@ -1,0 +1,20 @@
+# Go hot reload with air
+# This config is used by air to watch for changes and rebuild
+# Install air: go install github.com/air-verse/air@latest
+
+[build]
+  cmd = "go build -o tmp/admin.exe ./cmd/admin"
+  bin = "tmp/admin.exe"
+  include_ext = ["go", "gql", "tmpl", "html"]
+  exclude_dir = ["tmp", "vendor", "web"]
+  exclude_file = ["*.gitignore", "*.md"]
+
+[run]
+  cmd = "./tmp/admin.exe"
+  env = ["DB_HOST=localhost", "DB_PORT=3306", "DB_USER=root", "DB_PASSWORD=root", "DB_NAME=stacklifes", "ADMIN_PORT=8081"]
+
+[log]
+  time = true
+
+[screen]
+  clear_on_rebuild = true

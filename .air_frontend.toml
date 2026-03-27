@@ -1,0 +1,19 @@
+# Go hot reload with air - Frontend server
+
+[build]
+  cmd = "go build -o cmd/frontend/tmp/frontend.exe ./cmd/frontend"
+  bin = "cmd/frontend/tmp/frontend.exe"
+  include_ext = ["go"]
+  exclude_dir = ["tmp", "vendor", "web", "cmd/admin"]
+
+[run]
+  cmd = "./cmd/frontend/tmp/frontend.exe"
+
+[log]
+  time = true
+
+[screen]
+  clear_on_rebuild = true
+
+[misc]
+  clean_on_exit = true
