@@ -36,7 +36,7 @@ async function loadData() {
       directoryApi.list(),
       tagsApi.list()
     ])
-    articles.value = articleRes.data.data.list.filter((a: any) => a.status === 1)
+    articles.value = articleRes.data.data.list
     latestArticles.value = articles.value.slice(0, 5)
     categories.value = catRes.data.data
     directories.value = dirRes.data.data
@@ -114,15 +114,6 @@ onMounted(loadData)
     <n-spin :show="loading">
       <div class="layout">
         <main class="main-content">
-          <div class="content-header" v-if="currentType">
-            <n-tag v-if="currentType === 'category'" type="primary" size="large">
-              分类: {{ categories.find(c => c.id === currentId)?.name }}
-            </n-tag>
-            <n-tag v-else-if="currentType === 'tag'" type="warning" size="large">
-              标签: {{ allTags.find(t => t.id === currentId)?.name }}
-            </n-tag>
-          </div>
-          
           <n-empty v-if="!loading && filteredArticles.length === 0" description="暂无文章" />
           <div class="articles-list">
             <div 

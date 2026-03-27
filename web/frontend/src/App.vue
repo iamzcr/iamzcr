@@ -39,7 +39,7 @@ onMounted(loadMenuData)
         <div class="nav-left">
           <router-link to="/" class="logo">
             <span class="logo-icon">✍️</span>
-            <span class="logo-text">个人博客</span>
+            <span class="logo-text">阿呆不是呆哦</span>
           </router-link>
           <div class="nav-menu">
             <router-link to="/" class="nav-link">首页</router-link>
@@ -77,7 +77,7 @@ onMounted(loadMenuData)
     <footer class="site-footer">
       <div class="footer-content">
         <div class="footer-links">
-          <span>© 2024 个人博客</span>
+          <span>© 2024 阿呆不是呆哦</span>
           <a href="javascript:void(0)" @click="$router.push('/')">首页</a>
           <span class="divider">|</span>
           <a href="javascript:void(0)" @click="openAdmin">管理后台</a>

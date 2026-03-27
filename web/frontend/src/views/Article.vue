@@ -56,7 +56,7 @@ async function loadSidebarData() {
     categoryApi.list(),
     tagsApi.list()
   ])
-  latestArticles.value = articleRes.data.data.list.filter((a: any) => a.status === 1).slice(0, 5)
+  latestArticles.value = articleRes.data.data.list.slice(0, 5)
   categories.value = catRes.data.data
   allTags.value = tagRes.data.data
 }

@@ -21,12 +21,12 @@ func (h *ArticleHandler) List(c *gin.Context) {
 	pageSize := c.DefaultQuery("page_size", "10")
 
 	var total int64
-	models.DB.Model(&models.Article{}).Count(&total)
+	models.DB.Model(&models.Article{}).Where("status = ?", 1).Count(&total)
 
 	pageInt, _ := strconv.Atoi(page)
 	pageSizeInt, _ := strconv.Atoi(pageSize)
 	offset := (pageInt - 1) * pageSizeInt
-	models.DB.Offset(offset).Limit(pageSizeInt).Order("create_time DESC").Find(&articles)
+	models.DB.Where("status = ?", 1).Offset(offset).Limit(pageSizeInt).Order("create_time DESC").Find(&articles)
 
 	type ArticleWithTags struct {
 		models.Article
@@ -63,7 +63,7 @@ func (h *ArticleHandler) Get(c *gin.Context) {
 	id := c.Param("id")
 	var article models.Article
 
-	if err := models.DB.First(&article, id).Error; err != nil {
+	if err := models.DB.Where("status = ?", 1).First(&article, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "Article not found"})
 		return
 	}
