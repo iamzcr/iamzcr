@@ -1,7 +1,7 @@
-package handlers
+package admin
 
 import (
-	"blog/models"
+	"iamzcr/models"
 	"net/http"
 	"time"
 

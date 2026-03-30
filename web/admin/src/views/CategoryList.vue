@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
-import { NDataTable, NButton, NPopconfirm, NSpace, NModal, NForm, NFormItem, NInput, NInputNumber, NSwitch } from 'naive-ui'
+import { NDataTable, NButton, NModal, NForm, NFormItem, NInput, NInputNumber, NSwitch, NTag } from 'naive-ui'
 import { categoryApi } from '../api'
 
 const categories = ref<any[]>([])
@@ -14,16 +14,8 @@ const columns = [
   { title: '标识', key: 'mark' },
   { title: '类型', key: 'type' },
   { title: '权重', key: 'weight', width: 60 },
-  { title: '状态', key: 'status', width: 60, render: (row: any) => 
-    h('span', {}, row.status === 1 ? '启用' : '禁用') 
-  },
-  { title: '操作', key: 'actions', width: 180, render: (row: any) => 
-    h(NSpace, {}, () => [
-      h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑'),
-      h(NPopconfirm, { onPositiveClick: () => deleteCategory(row.id) }, 
-        () => h(NButton, { size: 'small', type: 'error' }, () => '删除'))
-    ])
-  }
+  { title: '状态', key: 'status', width: 60, render: (row: any) => h(NTag, { type: row.status === 1 ? 'success' : 'default', size: 'small' }, () => row.status === 1 ? '启用' : '禁用') },
+  { title: '操作', key: 'actions', width: 100, render: (row: any) => h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑') }
 ]
 
 async function loadCategories() {
@@ -36,6 +28,11 @@ async function loadCategories() {
   }
 }
 
+function openEdit(row?: any) {
+  editingCategory.value = row ? { ...row } : { id: 0, type: '', parent: '', mark: '', author: '', name: '', weight: 0, status: 1 }
+  showModal.value = true
+}
+
 async function saveCategory() {
   if (editingCategory.value.id) {
     await categoryApi.update(editingCategory.value.id, editingCategory.value)
@@ -46,22 +43,12 @@ async function saveCategory() {
   loadCategories()
 }
 
-function openEdit(row?: any) {
-  editingCategory.value = row ? { ...row } : { id: 0, type: '', parent: '', mark: '', author: '', name: '', weight: 0, status: 1 }
-  showModal.value = true
-}
-
-async function deleteCategory(id: number) {
-  await categoryApi.delete(id)
-  loadCategories()
-}
-
 onMounted(loadCategories)
 </script>
 
 <template>
   <div>
-    <div style="margin-bottom: 16px">
+    <div style="margin-bottom: 16px; display: flex; justify-content: flex-end;">
       <n-button type="primary" @click="openEdit()">新建分类</n-button>
     </div>
     <n-data-table :columns="columns" :data="categories" :loading="loading" />

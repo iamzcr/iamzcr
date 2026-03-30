@@ -1,8 +1,8 @@
 package main
 
 import (
-	"blog/config"
-	"blog/models"
+	"iamzcr/config"
+	"iamzcr/models"
 	"fmt"
 )
 

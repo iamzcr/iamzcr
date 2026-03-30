@@ -1,31 +1,28 @@
 <script setup lang="ts">
-import { ref, onMounted, h } from 'vue'
-import { NDataTable, NButton, NPopconfirm, NSpace, NModal, NForm, NFormItem, NInput, NInputNumber, NSelect } from 'naive-ui'
+import { ref, onMounted, h, computed } from 'vue'
+import { NDataTable, NButton, NModal, NForm, NFormItem, NInput, NInputNumber, NSelect } from 'naive-ui'
 import { directoryApi, categoryApi } from '../api'
 
 const directories = ref<any[]>([])
 const categories = ref<any[]>([])
 const loading = ref(false)
 const showModal = ref(false)
-const editingDirectory = ref({ id: 0, cid: 0, type: '', parent: '', mark: '', author: '', name: '', weight: 0, status: 1 })
+const editingDirectory = ref({ id: 0, cid: null as number | null, type: '', parent: '', mark: '', author: '', name: '', weight: 0, status: 1 })
+
+const categoryMap = computed(() => {
+  const map: Record<number, string> = {}
+  categories.value.forEach(c => { map[c.id] = c.name })
+  return map
+})
 
 const columns = [
   { title: 'ID', key: 'id', width: 60 },
   { title: '名称', key: 'name' },
-  { title: '分类', key: 'cid', width: 100, render: (row: any) => {
-    const cat = categories.value.find(c => c.id === row.cid)
-    return cat ? cat.name : '-'
-  }},
+  { title: '分类', key: 'cid', width: 100, render: (row: any) => row.cid ? (categoryMap.value[row.cid] || row.cid) : '-' },
   { title: '标识', key: 'mark' },
   { title: '类型', key: 'type' },
   { title: '权重', key: 'weight', width: 60 },
-  { title: '操作', key: 'actions', width: 180, render: (row: any) => 
-    h(NSpace, {}, () => [
-      h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑'),
-      h(NPopconfirm, { onPositiveClick: () => deleteDirectory(row.id) }, 
-        () => h(NButton, { size: 'small', type: 'error' }, () => '删除'))
-    ])
-  }
+  { title: '操作', key: 'actions', width: 100, render: (row: any) => h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑') }
 ]
 
 async function loadDirectories() {
@@ -43,23 +40,20 @@ async function loadCategories() {
   categories.value = res.data.data
 }
 
-async function saveDirectory() {
-  if (editingDirectory.value.id) {
-    await directoryApi.update(editingDirectory.value.id, editingDirectory.value)
-  } else {
-    await directoryApi.create(editingDirectory.value)
-  }
-  showModal.value = false
-  loadDirectories()
-}
-
 function openEdit(row?: any) {
-  editingDirectory.value = row ? { ...row } : { id: 0, cid: 0, type: '', parent: '', mark: '', author: '', name: '', weight: 0, status: 1 }
+  editingDirectory.value = row ? { ...row } : { id: 0, cid: null, type: '', parent: '', mark: '', author: '', name: '', weight: 0, status: 1 }
   showModal.value = true
 }
 
-async function deleteDirectory(id: number) {
-  await directoryApi.delete(id)
+async function saveDirectory() {
+  const data = { ...editingDirectory.value }
+  if (data.cid === null) delete (data as any).cid
+  if (editingDirectory.value.id) {
+    await directoryApi.update(editingDirectory.value.id, data)
+  } else {
+    await directoryApi.create(data)
+  }
+  showModal.value = false
   loadDirectories()
 }
 
@@ -71,14 +65,14 @@ onMounted(() => {
 
 <template>
   <div>
-    <div style="margin-bottom: 16px">
+    <div style="margin-bottom: 16px; display: flex; justify-content: flex-end;">
       <n-button type="primary" @click="openEdit()">新建目录</n-button>
     </div>
     <n-data-table :columns="columns" :data="directories" :loading="loading" />
     <n-modal v-model:show="showModal" preset="card" title="目录管理" style="width: 500px">
       <n-form :model="editingDirectory">
         <n-form-item label="所属分类">
-          <n-select v-model:value="editingDirectory.cid" :options="categories.map(c => ({ label: c.name, value: c.id }))" placeholder="选择分类" clearable />
+          <n-select v-model:value="editingDirectory.cid" :options="categories.map(c => ({ label: c.name, value: c.id }))" placeholder="选择分类（可选）" clearable />
         </n-form-item>
         <n-form-item label="名称">
           <n-input v-model:value="editingDirectory.name" />

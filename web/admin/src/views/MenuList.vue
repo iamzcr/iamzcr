@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
-import { NDataTable, NButton, NPopconfirm, NSpace, NModal, NForm, NFormItem, NInput, NInputNumber } from 'naive-ui'
+import { NDataTable, NButton, NModal, NForm, NFormItem, NInput, NInputNumber } from 'naive-ui'
 import { menuApi } from '../api'
 
 const menus = ref<any[]>([])
@@ -14,13 +14,7 @@ const columns = [
   { title: '链接', key: 'url', ellipsis: { tooltip: true } },
   { title: '类型', key: 'type', width: 60 },
   { title: '权重', key: 'weight', width: 60 },
-  { title: '操作', key: 'actions', width: 180, render: (row: any) => 
-    h(NSpace, {}, () => [
-      h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑'),
-      h(NPopconfirm, { onPositiveClick: () => deleteMenu(row.id) }, 
-        () => h(NButton, { size: 'small', type: 'error' }, () => '删除'))
-    ])
-  }
+  { title: '操作', key: 'actions', width: 100, render: (row: any) => h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑') }
 ]
 
 async function loadMenus() {
@@ -33,6 +27,11 @@ async function loadMenus() {
   }
 }
 
+function openEdit(row?: any) {
+  editingMenu.value = row ? { ...row } : { id: 0, type: 0, mark: '', author: '', name: '', url: '', parent: 0, icon: '', weight: 0, status: 1 }
+  showModal.value = true
+}
+
 async function saveMenu() {
   if (editingMenu.value.id) {
     await menuApi.update(editingMenu.value.id, editingMenu.value)
@@ -43,22 +42,12 @@ async function saveMenu() {
   loadMenus()
 }
 
-function openEdit(row?: any) {
-  editingMenu.value = row ? { ...row } : { id: 0, type: 0, mark: '', author: '', name: '', url: '', parent: 0, icon: '', weight: 0, status: 1 }
-  showModal.value = true
-}
-
-async function deleteMenu(id: number) {
-  await menuApi.delete(id)
-  loadMenus()
-}
-
 onMounted(loadMenus)
 </script>
 
 <template>
   <div>
-    <div style="margin-bottom: 16px">
+    <div style="margin-bottom: 16px; display: flex; justify-content: flex-end;">
       <n-button type="primary" @click="openEdit()">新建菜单</n-button>
     </div>
     <n-data-table :columns="columns" :data="menus" :loading="loading" />

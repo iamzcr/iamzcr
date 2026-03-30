@@ -1,7 +1,7 @@
 package models
 
 import (
-	"blog/config"
+	"iamzcr/config"
 	"fmt"
 	"log"
 

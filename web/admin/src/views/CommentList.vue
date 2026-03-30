@@ -1,26 +1,31 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
-import { NDataTable, NButton, NPopconfirm, NTag } from 'naive-ui'
+import { NDataTable, NButton } from 'naive-ui'
 import { commentApi } from '../api'
 
 const comments = ref<any[]>([])
 const loading = ref(false)
 
+function formatDate(time: number | string) {
+  if (!time) return '-'
+  const date = new Date(time)
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  const h = String(date.getHours()).padStart(2, '0')
+  const min = String(date.getMinutes()).padStart(2, '0')
+  const s = String(date.getSeconds()).padStart(2, '0')
+  return `${y}-${m}-${d} ${h}:${min}:${s}`
+}
+
 const columns = [
   { title: 'ID', key: 'id', width: 60 },
-  { title: '文章ID', key: 'article_id', width: 80 },
-  { title: '作者', key: 'author', width: 100 },
+  { title: '文章ID', key: 'aid', width: 80 },
+  { title: '作者', key: 'name', width: 100 },
   { title: '邮箱', key: 'email', width: 180 },
   { title: '内容', key: 'content', ellipsis: { tooltip: true } },
-  { title: '状态', key: 'status', width: 80, render: (row: any) => 
-    h(NTag, { type: row.status === 1 ? 'success' : 'warning', size: 'small' }, 
-      () => row.status === 1 ? '已审核' : '待审核') 
-  },
-  { title: '时间', key: 'created_at', width: 180 },
-  { title: '操作', key: 'actions', width: 120, render: (row: any) => 
-    h(NPopconfirm, { onPositiveClick: () => deleteComment(row.id) }, 
-      () => h(NButton, { size: 'small', type: 'error' }, () => '删除'))
-  }
+  { title: '时间', key: 'create_time', width: 180, render: (row: any) => formatDate(row.create_time) },
+  { title: '操作', key: 'actions', width: 100, render: (row: any) => h(NButton, { size: 'small', type: 'error', onClick: () => deleteComment(row.id) }, () => '删除') }
 ]
 
 async function loadComments() {
@@ -34,13 +39,17 @@ async function loadComments() {
 }
 
 async function deleteComment(id: number) {
-  await commentApi.delete(id)
-  loadComments()
+  if (confirm('确定要删除吗？')) {
+    await commentApi.delete(id)
+    loadComments()
+  }
 }
 
 onMounted(loadComments)
 </script>
 
 <template>
-  <n-data-table :columns="columns" :data="comments" :loading="loading" />
+  <div>
+    <n-data-table :columns="columns" :data="comments" :loading="loading" />
+  </div>
 </template>

@@ -178,3 +178,95 @@ type AdminGroup struct {
 func (AdminGroup) TableName() string {
 	return "sl_admin_group"
 }
+
+type Attach struct {
+	ID         int    `gorm:"primaryKey;column:id" json:"id"`
+	Name       string `gorm:"column:name;size:255" json:"name"`
+	Link       string `gorm:"column:link;size:255" json:"link"`
+	Path       string `gorm:"column:path;size:255" json:"path"`
+	Status     int    `gorm:"column:status" json:"status"`
+	Type       int    `gorm:"column:type" json:"type"`
+	CreateTime int    `gorm:"column:create_time" json:"create_time"`
+	UpdateTime int    `gorm:"column:update_time" json:"update_time"`
+}
+
+func (Attach) TableName() string {
+	return "sl_attach"
+}
+
+type Lang struct {
+	ID         int    `gorm:"primaryKey;column:id" json:"id"`
+	Name       string `gorm:"column:name;size:255" json:"name"`
+	Lang       string `gorm:"column:lang;size:16" json:"lang"`
+	Default    int    `gorm:"column:default" json:"default"`
+	Status     int    `gorm:"column:status" json:"status"`
+	Author     string `gorm:"column:author;size:50" json:"author"`
+	Weight     int    `gorm:"column:weight" json:"weight"`
+	CreateTime int    `gorm:"column:create_time" json:"create_time"`
+	UpdateTime int    `gorm:"column:update_time" json:"update_time"`
+}
+
+func (Lang) TableName() string {
+	return "sl_lang"
+}
+
+type Log struct {
+	ID         int    `gorm:"primaryKey;column:id" json:"id"`
+	Username   string `gorm:"column:username;size:32" json:"username"`
+	IP         string `gorm:"column:ip;size:32" json:"ip"`
+	Content    string `gorm:"column:content;size:500" json:"content"`
+	CreateTime int    `gorm:"column:create_time" json:"create_time"`
+	UpdateTime int    `gorm:"column:update_time" json:"update_time"`
+	Type       int    `gorm:"column:type" json:"type"`
+}
+
+func (Log) TableName() string {
+	return "sl_log"
+}
+
+type Message struct {
+	ID         int    `gorm:"primaryKey;column:id" json:"id"`
+	IP         string `gorm:"column:ip;size:50" json:"ip"`
+	Name       string `gorm:"column:name;size:255" json:"name"`
+	Email      string `gorm:"column:email;size:255" json:"email"`
+	URL        string `gorm:"column:url;size:255" json:"url"`
+	IsReply    int    `gorm:"column:is_reply" json:"is_reply"`
+	Content    string `gorm:"column:content;type:text" json:"content"`
+	CreateTime int    `gorm:"column:create_time" json:"create_time"`
+	UpdateTime int    `gorm:"column:update_time" json:"update_time"`
+}
+
+func (Message) TableName() string {
+	return "sl_message"
+}
+
+type Permit struct {
+	ID         int    `gorm:"primaryKey;column:id" json:"id"`
+	Type       int    `gorm:"column:type" json:"type"`
+	Mark       string `gorm:"column:mark;size:255" json:"mark"`
+	Parent     int    `gorm:"column:parent" json:"parent"`
+	Name       string `gorm:"column:name;size:100" json:"name"`
+	Modules    string `gorm:"column:modules;type:text" json:"modules"`
+	Author     string `gorm:"column:author;size:255" json:"author"`
+	Status     int    `gorm:"column:status" json:"status"`
+	Weight     int    `gorm:"column:weight" json:"weight"`
+	CreateTime int    `gorm:"column:create_time" json:"create_time"`
+	UpdateTime int    `gorm:"column:update_time" json:"update_time"`
+}
+
+func (Permit) TableName() string {
+	return "sl_permit"
+}
+
+type Read struct {
+	ID         int    `gorm:"primaryKey;column:id" json:"id"`
+	Aid        int    `gorm:"column:aid" json:"aid"`
+	Referer    string `gorm:"column:referer;size:255" json:"referer"`
+	IP         string `gorm:"column:ip;size:50" json:"ip"`
+	CreateTime int    `gorm:"column:create_time" json:"create_time"`
+	UpdateTime int    `gorm:"column:update_time" json:"update_time"`
+}
+
+func (Read) TableName() string {
+	return "sl_read"
+}

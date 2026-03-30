@@ -1,10 +1,12 @@
 package main
 
 import (
-	"blog/config"
-	"blog/handlers"
-	"blog/models"
+	"iamzcr/config"
+	"iamzcr/handlers/frontend"
+	"iamzcr/middleware"
+	"iamzcr/models"
 	"log"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,39 +16,61 @@ func main() {
 	models.InitDB(cfg)
 
 	r := gin.Default()
-	r.Use(corsMiddleware())
+	r.Use(middleware.CorsMiddleware())
 
 	api := r.Group("/api")
 	{
-		articleHandler := handlers.NewArticleHandler()
-		api.GET("/articles", articleHandler.List)
-		api.GET("/articles/:id", articleHandler.Get)
+		frontendHandler := frontend.NewFrontendHandler()
 
-		categoryHandler := handlers.NewCategoryHandler()
-		api.GET("/categories", categoryHandler.List)
+		api.GET("/articles", func(c *gin.Context) {
+			page := c.DefaultQuery("page", "1")
+			pageSize := c.DefaultQuery("page_size", "10")
+			p, _ := strconv.Atoi(page)
+			ps, _ := strconv.Atoi(pageSize)
 
-		directoryHandler := handlers.NewDirectoryHandler()
-		api.GET("/directories", directoryHandler.List)
+			var articles []models.Article
+			var total int64
+			models.DB.Model(&models.Article{}).Where("status = ?", 1).Count(&total)
+			models.DB.Where("status = ?", 1).Offset((p - 1) * ps).Limit(ps).Order("create_time DESC").Find(&articles)
 
-		tagsHandler := handlers.NewTagsHandler()
-		api.GET("/tags", tagsHandler.List)
+			type ArticleWithTags struct {
+				models.Article
+				Tags []models.Tags `json:"tags"`
+			}
+
+			result := make([]ArticleWithTags, len(articles))
+			for i, article := range articles {
+				result[i].Article = article
+				var articleTags []models.ArticleTags
+				models.DB.Where("aid = ?", article.ID).Find(&articleTags)
+				var tagIds []int
+				for _, at := range articleTags {
+					tagIds = append(tagIds, at.Tid)
+				}
+				if len(tagIds) > 0 {
+					var tags []models.Tags
+					models.DB.Where("id IN ?", tagIds).Find(&tags)
+					result[i].Tags = tags
+				}
+			}
+
+			c.JSON(200, gin.H{
+				"code":    0,
+				"message": "success",
+				"data": gin.H{
+					"list":  result,
+					"total": total,
+				},
+			})
+		})
+		api.GET("/articles/:id", frontendHandler.GetArticle)
+
+		api.GET("/categories", frontendHandler.GetCategories)
+		api.GET("/directories", frontendHandler.GetDirectories)
+		api.GET("/tags", frontendHandler.GetTags)
+		api.GET("/website", frontendHandler.GetWebsite)
 	}
 
 	log.Printf("Frontend API server starting on port %s...", cfg.FrontendPort)
 	r.Run(":" + cfg.FrontendPort)
-}
-
-func corsMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
-
-		c.Next()
-	}
 }

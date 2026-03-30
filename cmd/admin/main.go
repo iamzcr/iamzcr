@@ -1,9 +1,10 @@
 package main
 
 import (
-	"blog/config"
-	"blog/handlers"
-	"blog/models"
+	"iamzcr/config"
+	"iamzcr/handlers/admin"
+	"iamzcr/middleware"
+	"iamzcr/models"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -14,77 +15,120 @@ func main() {
 	models.InitDB(cfg)
 
 	r := gin.Default()
-	r.Use(corsMiddleware())
+	r.Use(middleware.CorsMiddleware())
 
 	api := r.Group("/api")
 	{
-		adminHandler := handlers.NewAdminHandler()
+		adminHandler := admin.NewAdminHandler()
 		api.POST("/login", adminHandler.Login)
-		api.POST("/logout", adminHandler.Logout)
-		api.GET("/admin/info", adminHandler.GetAdminInfo)
 
-		articleHandler := handlers.NewArticleHandler()
-		api.GET("/articles", articleHandler.List)
-		api.GET("/articles/:id", articleHandler.Get)
-		api.POST("/articles", articleHandler.Create)
-		api.PUT("/articles/:id", articleHandler.Update)
-		api.DELETE("/articles/:id", articleHandler.Delete)
+		adminGroup := api.Group("")
+		adminGroup.Use(middleware.AuthMiddleware())
+		{
+			adminGroup.POST("/logout", adminHandler.Logout)
+			adminGroup.GET("/admin/info", adminHandler.GetAdminInfo)
 
-		categoryHandler := handlers.NewCategoryHandler()
-		api.GET("/categories", categoryHandler.List)
-		api.GET("/categories/:id", categoryHandler.Get)
-		api.POST("/categories", categoryHandler.Create)
-		api.PUT("/categories/:id", categoryHandler.Update)
-		api.DELETE("/categories/:id", categoryHandler.Delete)
+			adminGroup.GET("/articles", adminHandler.ListArticles)
+			adminGroup.GET("/articles/:id", adminHandler.GetArticle)
+			adminGroup.POST("/articles", adminHandler.CreateArticle)
+			adminGroup.PUT("/articles/:id", adminHandler.UpdateArticle)
+			adminGroup.DELETE("/articles/:id", adminHandler.DeleteArticle)
 
-		commentHandler := handlers.NewCommentHandler()
-		api.GET("/comments", commentHandler.List)
-		api.GET("/comments/:id", commentHandler.Get)
-		api.POST("/comments", commentHandler.Create)
-		api.PUT("/comments/:id", commentHandler.Update)
-		api.DELETE("/comments/:id", commentHandler.Delete)
+			categoryHandler := admin.NewCategoryHandler()
+			adminGroup.GET("/categories", categoryHandler.List)
+			adminGroup.GET("/categories/:id", categoryHandler.Get)
+			adminGroup.POST("/categories", categoryHandler.Create)
+			adminGroup.PUT("/categories/:id", categoryHandler.Update)
+			adminGroup.DELETE("/categories/:id", categoryHandler.Delete)
 
-		menuHandler := handlers.NewMenuHandler()
-		api.GET("/menus", menuHandler.List)
-		api.GET("/menus/:id", menuHandler.Get)
-		api.POST("/menus", menuHandler.Create)
-		api.PUT("/menus/:id", menuHandler.Update)
-		api.DELETE("/menus/:id", menuHandler.Delete)
+			commentHandler := admin.NewCommentHandler()
+			adminGroup.GET("/comments", commentHandler.List)
+			adminGroup.GET("/comments/:id", commentHandler.Get)
+			adminGroup.POST("/comments", commentHandler.Create)
+			adminGroup.PUT("/comments/:id", commentHandler.Update)
+			adminGroup.DELETE("/comments/:id", commentHandler.Delete)
 
-		tagsHandler := handlers.NewTagsHandler()
-		api.GET("/tags", tagsHandler.List)
-		api.GET("/tags/:id", tagsHandler.Get)
-		api.POST("/tags", tagsHandler.Create)
-		api.PUT("/tags/:id", tagsHandler.Update)
-		api.DELETE("/tags/:id", tagsHandler.Delete)
+			menuHandler := admin.NewMenuHandler()
+			adminGroup.GET("/menus", menuHandler.List)
+			adminGroup.GET("/menus/:id", menuHandler.Get)
+			adminGroup.POST("/menus", menuHandler.Create)
+			adminGroup.PUT("/menus/:id", menuHandler.Update)
+			adminGroup.DELETE("/menus/:id", menuHandler.Delete)
 
-		directoryHandler := handlers.NewDirectoryHandler()
-		api.GET("/directories", directoryHandler.List)
-		api.GET("/directories/:id", directoryHandler.Get)
-		api.POST("/directories", directoryHandler.Create)
-		api.PUT("/directories/:id", directoryHandler.Update)
-		api.DELETE("/directories/:id", directoryHandler.Delete)
+			tagsHandler := admin.NewTagsHandler()
+			adminGroup.GET("/tags", tagsHandler.List)
+			adminGroup.GET("/tags/:id", tagsHandler.Get)
+			adminGroup.POST("/tags", tagsHandler.Create)
+			adminGroup.PUT("/tags/:id", tagsHandler.Update)
+			adminGroup.DELETE("/tags/:id", tagsHandler.Delete)
 
-		websiteHandler := handlers.NewWebsiteHandler()
-		api.GET("/website", websiteHandler.Get)
-		api.PUT("/website", websiteHandler.Update)
+			directoryHandler := admin.NewDirectoryHandler()
+			adminGroup.GET("/directories", directoryHandler.List)
+			adminGroup.GET("/directories/:id", directoryHandler.Get)
+			adminGroup.POST("/directories", directoryHandler.Create)
+			adminGroup.PUT("/directories/:id", directoryHandler.Update)
+			adminGroup.DELETE("/directories/:id", directoryHandler.Delete)
+
+			websiteHandler := admin.NewWebsiteHandler()
+			adminGroup.GET("/website", websiteHandler.Get)
+			adminGroup.PUT("/website", websiteHandler.Update)
+
+			attachHandler := admin.NewAttachHandler()
+			adminGroup.GET("/attaches", attachHandler.List)
+			adminGroup.GET("/attaches/:id", attachHandler.Get)
+			adminGroup.POST("/attaches", attachHandler.Create)
+			adminGroup.PUT("/attaches/:id", attachHandler.Update)
+			adminGroup.DELETE("/attaches/:id", attachHandler.Delete)
+
+			langHandler := admin.NewLangHandler()
+			adminGroup.GET("/langs", langHandler.List)
+			adminGroup.GET("/langs/:id", langHandler.Get)
+			adminGroup.POST("/langs", langHandler.Create)
+			adminGroup.PUT("/langs/:id", langHandler.Update)
+			adminGroup.DELETE("/langs/:id", langHandler.Delete)
+
+			logHandler := admin.NewLogHandler()
+			adminGroup.GET("/logs", logHandler.List)
+			adminGroup.GET("/logs/:id", logHandler.Get)
+			adminGroup.POST("/logs", logHandler.Create)
+			adminGroup.DELETE("/logs/:id", logHandler.Delete)
+
+			messageHandler := admin.NewMessageHandler()
+			adminGroup.GET("/messages", messageHandler.List)
+			adminGroup.GET("/messages/:id", messageHandler.Get)
+			adminGroup.POST("/messages", messageHandler.Create)
+			adminGroup.PUT("/messages/:id", messageHandler.Update)
+			adminGroup.DELETE("/messages/:id", messageHandler.Delete)
+
+			permitHandler := admin.NewPermitHandler()
+			adminGroup.GET("/permits", permitHandler.List)
+			adminGroup.GET("/permits/:id", permitHandler.Get)
+			adminGroup.POST("/permits", permitHandler.Create)
+			adminGroup.PUT("/permits/:id", permitHandler.Update)
+			adminGroup.DELETE("/permits/:id", permitHandler.Delete)
+
+			readHandler := admin.NewReadHandler()
+			adminGroup.GET("/reads", readHandler.List)
+			adminGroup.GET("/reads/:id", readHandler.Get)
+			adminGroup.POST("/reads", readHandler.Create)
+			adminGroup.DELETE("/reads/:id", readHandler.Delete)
+
+			adminGroup.GET("/admins", adminHandler.ListAdmins)
+			adminGroup.GET("/admins/:id", adminHandler.GetAdmin)
+			adminGroup.POST("/admins", adminHandler.CreateAdmin)
+			adminGroup.PUT("/admins/:id", adminHandler.UpdateAdmin)
+			adminGroup.DELETE("/admins/:id", adminHandler.DeleteAdmin)
+			adminGroup.POST("/admin/password", adminHandler.ChangePassword)
+
+			adminGroupHandler := admin.NewAdminGroupHandler()
+			adminGroup.GET("/admin_groups", adminGroupHandler.List)
+			adminGroup.GET("/admin_groups/:id", adminGroupHandler.Get)
+			adminGroup.POST("/admin_groups", adminGroupHandler.Create)
+			adminGroup.PUT("/admin_groups/:id", adminGroupHandler.Update)
+			adminGroup.DELETE("/admin_groups/:id", adminGroupHandler.Delete)
+		}
 	}
 
 	log.Printf("Admin API server starting on port %s...", cfg.AdminPort)
 	r.Run(":" + cfg.AdminPort)
-}
-
-func corsMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
-
-		c.Next()
-	}
 }

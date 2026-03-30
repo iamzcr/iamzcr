@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { NLayout, NLayoutSider, NLayoutHeader, NLayoutContent, NMenu, NButton, NDropdown, NAvatar } from 'naive-ui'
+import { NMenu, NDropdown, NButton } from 'naive-ui'
 import { menuApi, authApi } from './api'
 
 const collapsed = ref(false)
@@ -10,10 +10,6 @@ const router = useRouter()
 
 const adminInfo = ref<any>(null)
 const menuOptions = ref<any[]>([])
-
-function renderMenuIcon(icon: string) {
-  return () => icon
-}
 
 async function loadAdminInfo() {
   const token = localStorage.getItem('admin_token')
@@ -34,9 +30,17 @@ async function loadAdminInfo() {
 }
 
 async function loadMenus() {
+  const token = localStorage.getItem('admin_token')
+  if (!token) return
+  
   try {
     const res = await menuApi.list()
     const menus = res.data.data
+    
+    if (!menus || menus.length === 0) {
+      menuOptions.value = getDefaultMenus()
+      return
+    }
     
     const menuMap = new Map<number, any>()
     const rootMenus: any[] = []
@@ -45,14 +49,15 @@ async function loadMenus() {
       if (m.status !== 1) return
       menuMap.set(m.id, {
         label: m.name,
-        key: m.url || m.mark,
-        icon: renderMenuIcon(m.icon || '📄')
+        key: m.url || String(m.id)
       })
     })
     
     menus.forEach((m: any) => {
       if (m.status !== 1) return
       const menu = menuMap.get(m.id)
+      if (!menu) return
+      
       if (m.parent === 0) {
         rootMenus.push(menu)
       } else {
@@ -66,24 +71,68 @@ async function loadMenus() {
       }
     })
     
-    menuOptions.value = rootMenus
+    menuOptions.value = rootMenus.length > 0 ? rootMenus : getDefaultMenus()
   } catch (e) {
-    console.error(e)
+    console.error('Load menus error:', e)
+    menuOptions.value = getDefaultMenus()
   }
 }
 
+function getDefaultMenus() {
+  return [
+    { label: '仪表盘', key: '/' },
+    { label: '文章管理', key: 'articles', children: [
+      { label: '文章列表', key: 'articles' },
+      { label: '新建文章', key: 'articles/new' }
+    ]},
+    { label: '分类管理', key: 'categories' },
+    { label: '目录管理', key: 'directories' },
+    { label: '标签管理', key: 'tags' },
+    { label: '评论管理', key: 'comments' },
+    { label: '菜单管理', key: 'menus' },
+    { label: '网站设置', key: 'website' }
+  ]
+}
+
 function handleMenuSelect(key: string) {
-  router.push(`/${key}`)
+  console.log('Menu selected:', key)
+  
+  const pathMap: Record<string, string> = {
+    '/admin/article/list': '/articles',
+    '/admin/article/add': '/articles/new',
+    '/admin/category/list': '/categories',
+    '/admin/directory/list': '/directories',
+    '/admin/tags/list': '/tags',
+    '/admin/comment/list': '/comments',
+    '/admin/menu/list': '/menus',
+    '/admin/website/list': '/website',
+    '/admin/admin/list': '/admins',
+    '/admin/admin_group/list': '/admin_groups',
+    '/admin/admin/password': '/password',
+    '/admin/attach/list': '/attaches',
+    '/admin/lang/list': '/langs',
+    '/admin/log/list': '/logs',
+    '/admin/message/list': '/messages',
+    '/admin/permit/list': '/permits',
+    '/admin/read/list': '/reads',
+  }
+  
+  let path = pathMap[key] || key
+  if (!path.startsWith('/')) {
+    path = '/' + path
+  }
+  router.push(path)
 }
 
 const userOptions = [
-  { label: '个人设置', key: 'profile' },
-  { type: 'divider', key: 'd1' },
+  { label: '修改密码', key: 'password' },
   { label: '退出登录', key: 'logout' }
 ]
 
 function handleUserSelect(key: string) {
-  if (key === 'logout') {
+  if (key === 'password') {
+    router.push('/password')
+  } else if (key === 'logout') {
     authApi.logout().then(() => {
       localStorage.removeItem('admin_token')
       localStorage.removeItem('admin_info')
@@ -99,50 +148,108 @@ onMounted(() => {
 </script>
 
 <template>
-  <n-layout has-sider style="height: 100vh">
-    <n-layout-sider
-      v-if="!route.path.includes('/login')"
-      bordered
-      collapse-mode="width"
-      :collapsed-width="64"
-      :width="240"
-      show-trigger
-      @collapse="collapsed = true"
-      @expand="collapsed = false"
-      :native-scrollbar="false"
-    >
-      <div style="padding: 16px; font-size: 18px; font-weight: bold; text-align: center">
-        {{ collapsed ? 'B' : 'Blog Admin' }}
+  <n-message-provider>
+    <div id="app-container">
+      <div class="sidebar" v-if="route.path !== '/login'">
+        <div class="logo">{{ collapsed ? 'B' : 'Blog Admin' }}</div>
+        <n-menu
+          :collapsed="collapsed"
+          :options="menuOptions"
+          @update:value="handleMenuSelect"
+        />
       </div>
-      <n-menu
-        :collapsed="collapsed"
-        :collapsed-width="64"
-        :options="menuOptions"
-        @update:value="handleMenuSelect"
-        :value="route.name as string"
-      />
-    </n-layout-sider>
-    <n-layout>
-      <n-layout-header v-if="!route.path.includes('/login')" bordered style="padding: 12px 24px; display: flex; justify-content: flex-end; align-items: center">
-        <n-dropdown :options="userOptions" @select="handleUserSelect">
-          <n-button text>
-            <n-avatar round size="small" style="margin-right: 8px">
-              {{ adminInfo?.name?.charAt(0) || 'A' }}
-            </n-avatar>
-            {{ adminInfo?.name || '管理员' }}
-          </n-button>
-        </n-dropdown>
-      </n-layout-header>
-      <n-layout-content content-style="padding: 24px">
+      <div class="main-content" v-if="route.path !== '/login'">
+        <div class="header">
+          <div class="user-info">
+            <n-dropdown :options="userOptions" @select="handleUserSelect">
+              <n-button text>
+                <span class="username">{{ adminInfo?.name || '管理员' }} ▼</span>
+              </n-button>
+            </n-dropdown>
+          </div>
+        </div>
+        <div class="content">
+          <router-view :key="route.fullPath" />
+        </div>
+      </div>
+      <div v-if="route.path === '/login'" class="login-page">
         <router-view />
-      </n-layout-content>
-    </n-layout>
-  </n-layout>
+      </div>
+    </div>
+  </n-message-provider>
 </template>
 
 <style>
-body {
+* {
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
+}
+
+body, html {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+#app-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: row;
+}
+
+#app-container > .sidebar {
+  width: 240px;
+  background: #fff;
+  border-right: 1px solid #eee;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+#app-container > .main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#app-container > .login-page {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.sidebar .logo {
+  padding: 16px;
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+  border-bottom: 1px solid #eee;
+}
+
+.header {
+  height: 60px;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 24px;
+  flex-shrink: 0;
+}
+
+.user-info {
+  cursor: pointer;
+}
+
+.username {
+  color: #333;
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  background: #f5f7fa;
 }
 </style>

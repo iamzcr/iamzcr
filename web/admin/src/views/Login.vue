@@ -7,7 +7,6 @@ import { authApi } from '../api'
 const router = useRouter()
 const message = useMessage()
 
-const formRef = ref()
 const loading = ref(false)
 
 const formValue = ref({
@@ -21,10 +20,9 @@ const rules = {
 }
 
 async function handleLogin() {
+  loading.value = true
+  
   try {
-    await formRef.value?.validate()
-    loading.value = true
-    
     const res = await authApi.login(formValue.value)
     if (res.data.code === 0) {
       localStorage.setItem('admin_token', res.data.data.token)
@@ -32,10 +30,12 @@ async function handleLogin() {
       message.success('登录成功')
       router.push('/')
     } else {
-      message.error(res.data.message || '登录失败')
+      message.warning(res.data.message || '登录失败')
     }
   } catch (e: any) {
-    message.error(e.response?.data?.message || '登录失败')
+    console.error('Login error:', e)
+    const errorMessage = e.response?.data?.message || e.message || '登录失败，请检查网络'
+    message.error(errorMessage)
   } finally {
     loading.value = false
   }
@@ -46,7 +46,6 @@ async function handleLogin() {
   <div class="login-container">
     <n-card title="管理员登录" class="login-card">
       <n-form
-        ref="formRef"
         :model="formValue"
         :rules="rules"
         label-placement="left"

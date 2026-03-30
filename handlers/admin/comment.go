@@ -1,7 +1,7 @@
-package handlers
+package admin
 
 import (
-	"blog/models"
+	"iamzcr/models"
 	"net/http"
 	"time"
 
@@ -73,9 +73,6 @@ func (h *CommentHandler) Update(c *gin.Context) {
 	}
 
 	var input struct {
-		Name    string `json:"name"`
-		Email   string `json:"email"`
-		Url     string `json:"url"`
 		Content string `json:"content"`
 	}
 
@@ -84,9 +81,6 @@ func (h *CommentHandler) Update(c *gin.Context) {
 		return
 	}
 
-	comment.Name = input.Name
-	comment.Email = input.Email
-	comment.Url = input.Url
 	comment.Content = input.Content
 	comment.UpdateTime = int(time.Now().Unix())
 

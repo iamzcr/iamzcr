@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
-import { NDataTable, NButton, NPopconfirm, NSpace, NModal, NForm, NFormItem, NInput, NInputNumber, NSwitch } from 'naive-ui'
+import { NDataTable, NButton, NModal, NForm, NFormItem, NInput, NInputNumber, NSwitch, NTag } from 'naive-ui'
 import { tagsApi } from '../api'
 
 const tags = ref<any[]>([])
@@ -14,14 +14,8 @@ const columns = [
   { title: '标识', key: 'mark' },
   { title: '类型', key: 'type' },
   { title: '权重', key: 'weight', width: 60 },
-  { title: '热门', key: 'is_hot', width: 60 },
-  { title: '操作', key: 'actions', width: 180, render: (row: any) => 
-    h(NSpace, {}, () => [
-      h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑'),
-      h(NPopconfirm, { onPositiveClick: () => deleteTag(row.id) }, 
-        () => h(NButton, { size: 'small', type: 'error' }, () => '删除'))
-    ])
-  }
+  { title: '热门', key: 'is_hot', width: 60, render: (row: any) => h(NTag, { type: row.is_hot === 1 ? 'error' : 'default', size: 'small' }, () => row.is_hot === 1 ? '是' : '否') },
+  { title: '操作', key: 'actions', width: 100, render: (row: any) => h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑') }
 ]
 
 async function loadTags() {
@@ -34,6 +28,11 @@ async function loadTags() {
   }
 }
 
+function openEdit(row?: any) {
+  editingTag.value = row ? { ...row } : { id: 0, type: '', mark: '', author: '', name: '', weight: 0, status: 1, is_hot: 0 }
+  showModal.value = true
+}
+
 async function saveTag() {
   if (editingTag.value.id) {
     await tagsApi.update(editingTag.value.id, editingTag.value)
@@ -44,22 +43,12 @@ async function saveTag() {
   loadTags()
 }
 
-function openEdit(row?: any) {
-  editingTag.value = row ? { ...row } : { id: 0, type: '', mark: '', author: '', name: '', weight: 0, status: 1, is_hot: 0 }
-  showModal.value = true
-}
-
-async function deleteTag(id: number) {
-  await tagsApi.delete(id)
-  loadTags()
-}
-
 onMounted(loadTags)
 </script>
 
 <template>
   <div>
-    <div style="margin-bottom: 16px">
+    <div style="margin-bottom: 16px; display: flex; justify-content: flex-end;">
       <n-button type="primary" @click="openEdit()">新建标签</n-button>
     </div>
     <n-data-table :columns="columns" :data="tags" :loading="loading" />
