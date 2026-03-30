@@ -18,6 +18,11 @@ func main() {
 
 	api := r.Group("/api")
 	{
+		adminHandler := handlers.NewAdminHandler()
+		api.POST("/login", adminHandler.Login)
+		api.POST("/logout", adminHandler.Logout)
+		api.GET("/admin/info", adminHandler.GetAdminInfo)
+
 		articleHandler := handlers.NewArticleHandler()
 		api.GET("/articles", articleHandler.List)
 		api.GET("/articles/:id", articleHandler.Get)

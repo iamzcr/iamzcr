@@ -5,6 +5,32 @@ const api = axios.create({
   timeout: 10000
 })
 
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('admin_token')
+  if (token) {
+    config.headers.Authorization = token
+  }
+  return config
+})
+
+api.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('admin_token')
+      localStorage.removeItem('admin_info')
+      window.location.href = '/login'
+    }
+    return Promise.reject(error)
+  }
+)
+
+export const authApi = {
+  login: (data: any) => api.post('/login', data),
+  logout: () => api.post('/logout'),
+  getInfo: () => api.get('/admin/info')
+}
+
 export const articleApi = {
   list: (params?: any) => api.get('/articles', { params }),
   get: (id: number) => api.get(`/articles/${id}`),
