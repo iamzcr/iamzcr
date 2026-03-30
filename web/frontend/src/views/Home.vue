@@ -50,7 +50,8 @@ async function loadData() {
 
 function filterArticles() {
   currentType.value = route.name === 'category' ? 'category' : 
-                     route.name === 'tag' ? 'tag' : ''
+                     route.name === 'tag' ? 'tag' :
+                     route.name === 'directory' ? 'directory' : ''
   currentId.value = Number(route.params.id) || 0
   
   if (!currentId.value) {
@@ -60,6 +61,8 @@ function filterArticles() {
   
   if (currentType.value === 'category') {
     filteredArticles.value = articles.value.filter((a: any) => a.cid === currentId.value)
+  } else if (currentType.value === 'directory') {
+    filteredArticles.value = articles.value.filter((a: any) => a.did === currentId.value)
   } else if (currentType.value === 'tag') {
     filteredArticles.value = articles.value.filter((a: any) => {
       const tagIds = a.tags?.map((t: any) => t.id) || []

@@ -16,7 +16,12 @@ func NewDirectoryHandler() *DirectoryHandler {
 
 func (h *DirectoryHandler) List(c *gin.Context) {
 	var dirs []models.Directory
-	models.DB.Order("weight DESC").Find(&dirs)
+	cid := c.Query("cid")
+	if cid != "" {
+		models.DB.Where("cid = ?", cid).Order("weight DESC").Find(&dirs)
+	} else {
+		models.DB.Order("weight DESC").Find(&dirs)
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,

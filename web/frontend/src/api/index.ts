@@ -15,7 +15,7 @@ export const categoryApi = {
 }
 
 export const directoryApi = {
-  list: () => api.get('/directories')
+  list: (params?: any) => api.get('/directories', { params })
 }
 
 export const tagsApi = {
