@@ -49,8 +49,9 @@ async function handleLogin() {
         :model="formValue"
         :rules="rules"
         label-placement="left"
+        label-width="60px"
       >
-        <n-form-item path="username" label="用户名">
+        <n-form-item path="username" label="用户">
           <n-input 
             v-model:value="formValue.username" 
             placeholder="请输入用户名" 
@@ -86,10 +87,34 @@ async function handleLogin() {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: #f0f2f5;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .login-card {
-  width: 400px;
+  width: 380px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.login-card :deep(.n-card-header) {
+  text-align: center;
+  padding-bottom: 0;
+}
+
+.login-card :deep(.n-card-header__main) {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a365d;
+}
+
+.login-card :deep(.n-form-item .n-form-item-label) {
+  justify-content: flex-end;
+}
+
+.login-card :deep(.n-input) {
+  --n-border-radius: 6px;
+}
+
+.login-card :deep(.n-button) {
+  --n-border-radius: 6px;
 }
 </style>

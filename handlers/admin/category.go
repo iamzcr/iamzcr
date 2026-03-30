@@ -16,13 +16,33 @@ func NewCategoryHandler() *CategoryHandler {
 
 func (h *CategoryHandler) List(c *gin.Context) {
 	var categories []models.Category
-	models.DB.Order("weight DESC").Find(&categories)
+	var total int64
+
+	page := c.DefaultQuery("page", "1")
+	pageSize := c.DefaultQuery("page_size", "10")
+
+	models.DB.Model(&models.Category{}).Count(&total)
+
+	models.DB.Order("weight DESC").Limit(10).Offset((parseInt(page) - 1) * parseInt(pageSize)).Find(&categories)
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
 		"message": "success",
-		"data":    categories,
+		"data": gin.H{
+			"list":  categories,
+			"total": total,
+		},
 	})
+}
+
+func parseInt(s string) int {
+	var n int
+	for _, c := range s {
+		if c >= '0' && c <= '9' {
+			n = n*10 + int(c-'0')
+		}
+	}
+	return n
 }
 
 func (h *CategoryHandler) Get(c *gin.Context) {

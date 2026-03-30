@@ -16,17 +16,26 @@ func NewDirectoryHandler() *DirectoryHandler {
 
 func (h *DirectoryHandler) List(c *gin.Context) {
 	var dirs []models.Directory
+	var total int64
+
+	page := c.DefaultQuery("page", "1")
+	pageSize := c.DefaultQuery("page_size", "10")
 	cid := c.Query("cid")
+
+	query := models.DB.Model(&models.Directory{})
 	if cid != "" {
-		models.DB.Where("cid = ?", cid).Order("weight DESC").Find(&dirs)
-	} else {
-		models.DB.Order("weight DESC").Find(&dirs)
+		query = query.Where("cid = ?", cid)
 	}
+	query.Count(&total)
+	query.Order("weight DESC").Limit(parseInt(pageSize)).Offset((parseInt(page) - 1) * parseInt(pageSize)).Find(&dirs)
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
 		"message": "success",
-		"data":    dirs,
+		"data": gin.H{
+			"list":  dirs,
+			"total": total,
+		},
 	})
 }
 

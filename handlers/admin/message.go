@@ -17,11 +17,15 @@ func NewMessageHandler() *MessageHandler {
 
 func (h *MessageHandler) List(c *gin.Context) {
 	var messages []models.Message
-	if err := models.DB.Order("id DESC").Find(&messages).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "success", "data": messages})
+	var total int64
+
+	page := c.DefaultQuery("page", "1")
+	pageSize := c.DefaultQuery("page_size", "10")
+
+	models.DB.Model(&models.Message{}).Count(&total)
+	models.DB.Order("id DESC").Limit(parseInt(pageSize)).Offset((parseInt(page) - 1) * parseInt(pageSize)).Find(&messages)
+
+	c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "success", "data": gin.H{"list": messages, "total": total}})
 }
 
 func (h *MessageHandler) Get(c *gin.Context) {

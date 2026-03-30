@@ -17,11 +17,15 @@ func NewPermitHandler() *PermitHandler {
 
 func (h *PermitHandler) List(c *gin.Context) {
 	var permits []models.Permit
-	if err := models.DB.Order("weight DESC").Find(&permits).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "success", "data": permits})
+	var total int64
+
+	page := c.DefaultQuery("page", "1")
+	pageSize := c.DefaultQuery("page_size", "10")
+
+	models.DB.Model(&models.Permit{}).Count(&total)
+	models.DB.Order("weight DESC").Limit(parseInt(pageSize)).Offset((parseInt(page) - 1) * parseInt(pageSize)).Find(&permits)
+
+	c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "success", "data": gin.H{"list": permits, "total": total}})
 }
 
 func (h *PermitHandler) Get(c *gin.Context) {

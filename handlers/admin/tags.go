@@ -16,12 +16,21 @@ func NewTagsHandler() *TagsHandler {
 
 func (h *TagsHandler) List(c *gin.Context) {
 	var tags []models.Tags
-	models.DB.Order("weight DESC").Find(&tags)
+	var total int64
+
+	page := c.DefaultQuery("page", "1")
+	pageSize := c.DefaultQuery("page_size", "10")
+
+	models.DB.Model(&models.Tags{}).Count(&total)
+	models.DB.Order("weight DESC").Limit(parseInt(pageSize)).Offset((parseInt(page) - 1) * parseInt(pageSize)).Find(&tags)
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
 		"message": "success",
-		"data":    tags,
+		"data": gin.H{
+			"list":  tags,
+			"total": total,
+		},
 	})
 }
 

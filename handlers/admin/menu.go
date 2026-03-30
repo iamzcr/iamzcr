@@ -16,12 +16,21 @@ func NewMenuHandler() *MenuHandler {
 
 func (h *MenuHandler) List(c *gin.Context) {
 	var menus []models.Menu
-	models.DB.Order("weight DESC").Find(&menus)
+	var total int64
+
+	page := c.DefaultQuery("page", "1")
+	pageSize := c.DefaultQuery("page_size", "10")
+
+	models.DB.Model(&models.Menu{}).Count(&total)
+	models.DB.Order("weight DESC").Limit(parseInt(pageSize)).Offset((parseInt(page) - 1) * parseInt(pageSize)).Find(&menus)
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
 		"message": "success",
-		"data":    menus,
+		"data": gin.H{
+			"list":  menus,
+			"total": total,
+		},
 	})
 }
 

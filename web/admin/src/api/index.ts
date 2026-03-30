@@ -40,7 +40,7 @@ export const articleApi = {
 }
 
 export const categoryApi = {
-  list: () => api.get('/categories'),
+  list: (params?: any) => api.get('/categories', { params }),
   get: (id: number) => api.get(`/categories/${id}`),
   create: (data: any) => api.post('/categories', data),
   update: (id: number, data: any) => api.put(`/categories/${id}`, data),
@@ -48,7 +48,7 @@ export const categoryApi = {
 }
 
 export const commentApi = {
-  list: () => api.get('/comments'),
+  list: (params?: any) => api.get('/comments', { params }),
   get: (id: number) => api.get(`/comments/${id}`),
   create: (data: any) => api.post('/comments', data),
   update: (id: number, data: any) => api.put(`/comments/${id}`, data),
@@ -56,7 +56,7 @@ export const commentApi = {
 }
 
 export const menuApi = {
-  list: () => api.get('/menus'),
+  list: (params?: any) => api.get('/menus', { params }),
   get: (id: number) => api.get(`/menus/${id}`),
   create: (data: any) => api.post('/menus', data),
   update: (id: number, data: any) => api.put(`/menus/${id}`, data),

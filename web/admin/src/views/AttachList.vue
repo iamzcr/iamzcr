@@ -6,6 +6,7 @@ import { attachApi } from '../api'
 const attaches = ref<any[]>([])
 const loading = ref(false)
 const showModal = ref(false)
+const pagination = ref({ page: 1, pageSize: 10, total: 0 })
 const editingAttach = ref({ id: 0, name: '', link: '', path: '', status: 1, type: 1 })
 
 const typeOptions = [
@@ -45,8 +46,9 @@ const columns = [
 async function loadAttaches() {
   loading.value = true
   try {
-    const res = await attachApi.list()
-    attaches.value = res.data.data
+    const res = await attachApi.list({ page: pagination.value.page, page_size: pagination.value.pageSize })
+    attaches.value = res.data.data.list || res.data.data
+    pagination.value.total = res.data.data.total || 0
   } finally {
     loading.value = false
   }
@@ -75,7 +77,7 @@ onMounted(loadAttaches)
     <div style="margin-bottom: 16px; display: flex; justify-content: flex-end;">
       <n-button type="primary" @click="openEdit()">新建附件</n-button>
     </div>
-    <n-data-table :columns="columns" :data="attaches" :loading="loading" />
+    <n-data-table :columns="columns" :data="attaches" :loading="loading" :pagination="pagination" @update:page="pagination.page = $event; loadAttaches()" />
     <n-modal v-model:show="showModal" preset="card" title="附件管理" style="width: 500px">
       <n-form :model="editingAttach">
         <n-form-item label="名称">

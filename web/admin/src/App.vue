@@ -199,10 +199,37 @@ body, html {
 
 #app-container > .sidebar {
   width: 240px;
-  background: #fff;
-  border-right: 1px solid #eee;
+  background: #1a365d;
+  border-right: 1px solid #2c5282;
   overflow-y: auto;
   flex-shrink: 0;
+}
+
+.sidebar :deep(.n-menu) {
+  background: transparent;
+  color: #e2e8f0;
+}
+
+.sidebar :deep(.n-menu-item-content) {
+  background: transparent;
+}
+
+.sidebar :deep(.n-menu-item-content:hover) {
+  background: #2c5282;
+}
+
+.sidebar :deep(.n-menu-item-content--selected) {
+  background: #2c5282;
+}
+
+.sidebar :deep(.n-menu-item-content--selected::before) {
+  background: #3182ce;
+}
+
+.sidebar .logo {
+  background: #1a365d;
+  color: #fff;
+  border-bottom: 1px solid #2c5282;
 }
 
 #app-container > .main-content {
@@ -229,13 +256,17 @@ body, html {
 
 .header {
   height: 60px;
-  background: #fff;
-  border-bottom: 1px solid #eee;
+  background: #2c5282;
+  border-bottom: 1px solid #1a365d;
   display: flex;
   align-items: center;
   justify-content: flex-end;
   padding: 0 24px;
   flex-shrink: 0;
+}
+
+.header .username {
+  color: #e2e8f0;
 }
 
 .user-info {

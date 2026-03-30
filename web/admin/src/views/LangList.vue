@@ -6,6 +6,7 @@ import { langApi } from '../api'
 const langs = ref<any[]>([])
 const loading = ref(false)
 const showModal = ref(false)
+const pagination = ref({ page: 1, pageSize: 10, total: 0 })
 const editingLang = ref({ id: 0, name: '', lang: '', default: 0, status: 1, author: '', weight: 0 })
 
 function formatDate(time: number | string) {
@@ -35,8 +36,9 @@ const columns = [
 async function loadLangs() {
   loading.value = true
   try {
-    const res = await langApi.list()
-    langs.value = res.data.data
+    const res = await langApi.list({ page: pagination.value.page, page_size: pagination.value.pageSize })
+    langs.value = res.data.data.list || res.data.data
+    pagination.value.total = res.data.data.total || 0
   } finally {
     loading.value = false
   }
@@ -65,7 +67,7 @@ onMounted(loadLangs)
     <div style="margin-bottom: 16px; display: flex; justify-content: flex-end;">
       <n-button type="primary" @click="openEdit()">新建语言</n-button>
     </div>
-    <n-data-table :columns="columns" :data="langs" :loading="loading" />
+    <n-data-table :columns="columns" :data="langs" :loading="loading" :pagination="pagination" @update:page="pagination.page = $event; loadLangs()" />
     <n-modal v-model:show="showModal" preset="card" title="语言管理" style="width: 500px">
       <n-form :model="editingLang">
         <n-form-item label="名称">

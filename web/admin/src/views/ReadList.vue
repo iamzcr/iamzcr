@@ -7,6 +7,7 @@ const reads = ref<any[]>([])
 const loading = ref(false)
 const articleMap = ref<Record<number, string>>({})
 const aid = ref('')
+const pagination = ref({ page: 1, pageSize: 10, total: 0 })
 
 function formatDate(time: number | string) {
   if (!time) return '-'
@@ -41,9 +42,11 @@ async function loadArticles() {
 async function loadReads() {
   loading.value = true
   try {
-    const params = aid.value ? { aid: aid.value } : {}
+    const params: any = { page: pagination.value.page, page_size: pagination.value.pageSize }
+    if (aid.value) params.aid = aid.value
     const res = await readApi.list(params)
-    reads.value = res.data.data
+    reads.value = res.data.data.list || res.data.data
+    pagination.value.total = res.data.data.total || 0
   } finally {
     loading.value = false
   }
@@ -61,6 +64,6 @@ onMounted(() => {
       <n-input v-model:value="aid" placeholder="文章ID" style="width: 120px" />
       <n-button type="primary" @click="loadReads">搜索</n-button>
     </div>
-    <n-data-table :columns="columns" :data="reads" :loading="loading" />
+    <n-data-table :columns="columns" :data="reads" :loading="loading" :pagination="pagination" @update:page="pagination.page = $event; loadReads()" />
   </div>
 </template>

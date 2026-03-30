@@ -17,11 +17,15 @@ func NewLangHandler() *LangHandler {
 
 func (h *LangHandler) List(c *gin.Context) {
 	var langs []models.Lang
-	if err := models.DB.Order("weight DESC").Find(&langs).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "success", "data": langs})
+	var total int64
+
+	page := c.DefaultQuery("page", "1")
+	pageSize := c.DefaultQuery("page_size", "10")
+
+	models.DB.Model(&models.Lang{}).Count(&total)
+	models.DB.Order("weight DESC").Limit(parseInt(pageSize)).Offset((parseInt(page) - 1) * parseInt(pageSize)).Find(&langs)
+
+	c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "success", "data": gin.H{"list": langs, "total": total}})
 }
 
 func (h *LangHandler) Get(c *gin.Context) {

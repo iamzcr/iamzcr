@@ -17,18 +17,20 @@ func NewReadHandler() *ReadHandler {
 
 func (h *ReadHandler) List(c *gin.Context) {
 	var reads []models.Read
-	query := models.DB.Order("id DESC")
+	var total int64
 
+	page := c.DefaultQuery("page", "1")
+	pageSize := c.DefaultQuery("page_size", "10")
 	aid := c.Query("aid")
+
+	query := models.DB.Model(&models.Read{})
 	if aid != "" {
 		query = query.Where("aid = ?", aid)
 	}
+	query.Count(&total)
+	query.Order("id DESC").Limit(parseInt(pageSize)).Offset((parseInt(page) - 1) * parseInt(pageSize)).Find(&reads)
 
-	if err := query.Find(&reads).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "success", "data": reads})
+	c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "success", "data": gin.H{"list": reads, "total": total}})
 }
 
 func (h *ReadHandler) Get(c *gin.Context) {

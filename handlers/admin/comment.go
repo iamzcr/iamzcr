@@ -16,12 +16,21 @@ func NewCommentHandler() *CommentHandler {
 
 func (h *CommentHandler) List(c *gin.Context) {
 	var comments []models.Comment
-	models.DB.Order("create_time DESC").Find(&comments)
+	var total int64
+
+	page := c.DefaultQuery("page", "1")
+	pageSize := c.DefaultQuery("page_size", "10")
+
+	models.DB.Model(&models.Comment{}).Count(&total)
+	models.DB.Order("create_time DESC").Limit(parseInt(pageSize)).Offset((parseInt(page) - 1) * parseInt(pageSize)).Find(&comments)
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
 		"message": "success",
-		"data":    comments,
+		"data": gin.H{
+			"list":  comments,
+			"total": total,
+		},
 	})
 }
 

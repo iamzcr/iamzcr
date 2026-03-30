@@ -17,18 +17,20 @@ func NewLogHandler() *LogHandler {
 
 func (h *LogHandler) List(c *gin.Context) {
 	var logs []models.Log
-	query := models.DB.Order("id DESC")
+	var total int64
 
+	page := c.DefaultQuery("page", "1")
+	pageSize := c.DefaultQuery("page_size", "10")
 	username := c.Query("username")
+
+	query := models.DB.Model(&models.Log{})
 	if username != "" {
 		query = query.Where("username LIKE ?", "%"+username+"%")
 	}
+	query.Count(&total)
+	query.Order("id DESC").Limit(parseInt(pageSize)).Offset((parseInt(page) - 1) * parseInt(pageSize)).Find(&logs)
 
-	if err := query.Find(&logs).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "success", "data": logs})
+	c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "success", "data": gin.H{"list": logs, "total": total}})
 }
 
 func (h *LogHandler) Get(c *gin.Context) {

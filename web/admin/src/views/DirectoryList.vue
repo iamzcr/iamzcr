@@ -7,6 +7,7 @@ const directories = ref<any[]>([])
 const categories = ref<any[]>([])
 const loading = ref(false)
 const showModal = ref(false)
+const pagination = ref({ page: 1, pageSize: 10, total: 0 })
 const editingDirectory = ref({ id: 0, cid: null as number | null, type: '', parent: '', mark: '', author: '', name: '', weight: 0, status: 1 })
 
 const categoryMap = computed(() => {
@@ -28,16 +29,17 @@ const columns = [
 async function loadDirectories() {
   loading.value = true
   try {
-    const res = await directoryApi.list()
-    directories.value = res.data.data
+    const res = await directoryApi.list({ page: pagination.value.page, page_size: pagination.value.pageSize })
+    directories.value = res.data.data.list || res.data.data
+    pagination.value.total = res.data.data.total || 0
   } finally {
     loading.value = false
   }
 }
 
 async function loadCategories() {
-  const res = await categoryApi.list()
-  categories.value = res.data.data
+  const res = await categoryApi.list({ page: 1, page_size: 1000 })
+  categories.value = res.data.data.list || res.data.data
 }
 
 function openEdit(row?: any) {
@@ -68,7 +70,7 @@ onMounted(() => {
     <div style="margin-bottom: 16px; display: flex; justify-content: flex-end;">
       <n-button type="primary" @click="openEdit()">新建目录</n-button>
     </div>
-    <n-data-table :columns="columns" :data="directories" :loading="loading" />
+    <n-data-table :columns="columns" :data="directories" :loading="loading" :pagination="pagination" @update:page="pagination.page = $event; loadDirectories()" />
     <n-modal v-model:show="showModal" preset="card" title="目录管理" style="width: 500px">
       <n-form :model="editingDirectory">
         <n-form-item label="所属分类">
