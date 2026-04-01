@@ -1,4 +1,4 @@
-# 个人博客系统
+# 堆栈人生博客系统
 
 基于 Go + Gin + GORM 的后端 API，配合 Vite + Vue 3 + Naive UI 前端构建的个人博客系统。
 
@@ -32,7 +32,7 @@ iamzcr/
 ├── Makefile            # 构建脚本
 ├── admin               # 后台服务可执行文件 (Linux)
 ├── admin.exe           # 后台服务可执行文件 (Windows)
-├── frontend           # 前台服务可执行文件 (Linux)
+├── frontend            # 前台服务可执行文件 (Linux)
 └── frontend.exe        # 前台服务可执行文件 (Windows)
 ```
 
@@ -397,21 +397,3 @@ sudo systemctl start iamzcr-admin iamzcr-frontend
 | sl_message | 留言 |
 | sl_permit | 权限 |
 | sl_read | 阅读记录 |
-
-## Makefile 命令
-
-```bash
-make help          # 显示帮助信息
-make build         # 编译后端服务
-make build-admin   # 编译后台服务
-make build-frontend # 编译前台服务
-make run-admin     # 运行后台服务
-make run-frontend  # 运行前台服务
-make clean         # 清理构建产物
-make all           # 编译所有服务
-```
-
-## 默认账号
-
-- 用户名: admin
-- 密码: admin
