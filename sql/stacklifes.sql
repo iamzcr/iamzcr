@@ -10,108 +10,10 @@ Target Server Type    : MYSQL
 Target Server Version : 50744
 File Encoding         : 65001
 
-Date: 2026-03-27 18:33:29
+Date: 2026-04-01 21:46:22
 */
 
 SET FOREIGN_KEY_CHECKS=0;
-
--- ----------------------------
--- Table structure for articles
--- ----------------------------
-DROP TABLE IF EXISTS `articles`;
-CREATE TABLE `articles` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `content` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
-  `summary` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `cover` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `tags` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` bigint(20) DEFAULT '1',
-  `view_count` bigint(20) DEFAULT '0',
-  `created_at` datetime(3) DEFAULT NULL,
-  `updated_at` datetime(3) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ----------------------------
--- Records of articles
--- ----------------------------
-
--- ----------------------------
--- Table structure for categories
--- ----------------------------
-DROP TABLE IF EXISTS `categories`;
-CREATE TABLE `categories` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `slug` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `created_at` datetime(3) DEFAULT NULL,
-  `updated_at` datetime(3) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_categories_slug` (`slug`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ----------------------------
--- Records of categories
--- ----------------------------
-
--- ----------------------------
--- Table structure for comments
--- ----------------------------
-DROP TABLE IF EXISTS `comments`;
-CREATE TABLE `comments` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `article_id` bigint(20) unsigned NOT NULL,
-  `content` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `author` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` bigint(20) DEFAULT '1',
-  `created_at` datetime(3) DEFAULT NULL,
-  `updated_at` datetime(3) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ----------------------------
--- Records of comments
--- ----------------------------
-
--- ----------------------------
--- Table structure for links
--- ----------------------------
-DROP TABLE IF EXISTS `links`;
-CREATE TABLE `links` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `url` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `sort` bigint(20) DEFAULT '0',
-  `created_at` datetime(3) DEFAULT NULL,
-  `updated_at` datetime(3) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ----------------------------
--- Records of links
--- ----------------------------
-
--- ----------------------------
--- Table structure for pages
--- ----------------------------
-DROP TABLE IF EXISTS `pages`;
-CREATE TABLE `pages` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `content` longtext COLLATE utf8mb4_unicode_ci,
-  `slug` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `status` bigint(20) DEFAULT '1',
-  `created_at` datetime(3) DEFAULT NULL,
-  `updated_at` datetime(3) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_pages_slug` (`slug`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ----------------------------
--- Records of pages
--- ----------------------------
 
 -- ----------------------------
 -- Table structure for sl_admin
@@ -134,13 +36,14 @@ CREATE TABLE `sl_admin` (
   `status` tinyint(1) DEFAULT '0' COMMENT '用户状态',
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=381 DEFAULT CHARSET=utf8 COMMENT='用户表';
+) ENGINE=InnoDB AUTO_INCREMENT=382 DEFAULT CHARSET=utf8 COMMENT='用户表';
 
 -- ----------------------------
 -- Records of sl_admin
 -- ----------------------------
-INSERT INTO `sl_admin` VALUES ('377', 'nicholas', 'f31f413a2c4164ae89513383a3c08ea5', 'b16574c54c98b9512edbecb8fa4f47f2', '1', 'nicholas', null, '0', '2147483647', '85', '1710860215', '120.230.252.60', null, '1');
+INSERT INTO `sl_admin` VALUES ('377', 'nicholas', '5bd357068b8974894c1ba122a76db2d5', '22a73706bc6b28e5c26932b1e3cc856a', '1', 'nicholas', null, '0', '2147483647', '85', '1710860215', '120.230.252.60', null, '1');
 INSERT INTO `sl_admin` VALUES ('380', 'admin', '50029fc296985a142931182b0ef3764f', 'b4fd1d2cb085390fbbadae65e07876a7', '1', 'admin', null, '0', '2147483647', '0', '1683297155', '183.6.88.24', null, '1');
+INSERT INTO `sl_admin` VALUES ('381', 'test', '91d4b760bf3bf963b775955e12d0a3c2', 'test', '1', '测试用户', '1774845863', '1774845863', '0', '0', '0', '', '', '1');
 
 -- ----------------------------
 -- Table structure for sl_admin_group
@@ -201,7 +104,7 @@ INSERT INTO `sl_article` VALUES ('295', '371', '379', 'nginx安装和配置', nu
 INSERT INTO `sl_article` VALUES ('296', '371', '380', 'gitea安装和配置', null, null, 'nicholas', null, null, '文档地址\r\n\r\nhttps://docs.gitea.com/installation/install-from-binary\r\n\r\n下载安装\r\n\r\n```bash\r\nwget -O gitea https://github.com/go-gitea/gitea/releases/download/v1.21.11/gitea-1.21.11-linux-amd64\r\nchmod +x gitea\r\n```\r\n\r\n新建用户和用户组\r\n\r\n```bash\r\ngroupadd --system git\r\nadduser \\\r\n   --system \\\r\n   --shell /bin/bash \\\r\n   --comment \'Git Version Control\' \\\r\n   --gid git \\\r\n   --home-dir /home/git \\\r\n   --create-home \\\r\n   git\r\n```\r\n\r\n创建数据目录\r\n\r\n```bash\r\nmkdir -p /var/lib/gitea/{custom,data,log}\r\nchown -R git:git /var/lib/gitea/  #存放仓库相关文件的目录\r\nchmod -R 750 /var/lib/gitea/\r\nmkdir /etc/gitea\r\nchown root:git /etc/gitea  #存放配置文件app.ini的目录\r\nchmod 770 /etc/gitea\r\n```\r\n复制二进制文件到全局位置\r\n\r\n```bash\r\ncp gitea /usr/local/bin/gitea\r\n```\r\n\r\n新建启动文件：gitea.service\r\n\r\n```bash\r\n[Unit]\r\nDescription=Gitea (Git with a cup of tea)\r\nAfter=syslog.target\r\nAfter=network.target\r\n[Service]\r\nRestartSec=2s\r\nType=simple\r\nUser=git\r\nGroup=git\r\nWorkingDirectory=/var/lib/gitea/\r\nExecStart=/usr/local/bin/gitea web --config /etc/gitea/app.ini\r\nRestart=always\r\nEnvironment=USER=git HOME=/home/git GITEA_WORK_DIR=/var/lib/gitea\r\n[Install]\r\nWantedBy=multi-user.target\r\n```\r\n\r\n其他配置可参考\r\n\r\nhttps://github.com/go-gitea/gitea/blob/release/v1.21/contrib/systemd/gitea.service\r\n\r\n复制配置文件\r\n\r\n```bash\r\nmv gitea.service /etc/systemd/system\r\n```\r\n\r\n激活 gitea 并将它作为系统自启动服务\r\n\r\n```bash\r\n sudo systemctl enable gitea\r\n sudo systemctl start gitea\r\n```\r\n\r\n访问：http://你的虚拟机ip:3000/，初始化gitea，注意如果访问不了，查看防火墙是否关闭。\r\n\r\n如果配置保存中出现需要更高版本的git，安装高版本的git，卸载老版本\r\n\r\n```bash\r\nyum remove git\r\n```\r\n\r\n下载并安装\r\n\r\n```bash\r\nwget https://mirrors.edge.kernel.org/pub/software/scm/git/git-2.8.2.tar.gz\r\ntar zxvf git-2.8.2.tar.gz\r\ncd git-2.8.2\r\n#依赖安装\r\nyum install -y curl-devel expat-devel gcc gettext-devel openssl-devel zlib-devel asciidoc xmlto perl-devel perl-CPAN autoconf*\r\nautoconf\r\n#编译安装\r\n./configure\r\nmake && make install\r\n```\r\n\r\n配置环境变量\r\n\r\n```bash\r\necho \"export PATH=$PATH:/usr/local/git/bin\" >> /etc/bashrc\r\nsource /etc/bashrc\r\n```\r\n\r\n测试，从命令行创建一个新的仓库\r\n\r\n```bash\r\ntouch README.md\r\ngit init\r\ngit checkout -b main\r\ngit add README.md\r\ngit commit -m \"first commit\"\r\n```\r\n\r\n从命令行推送已经创建的仓库\r\n\r\n```bash\r\ngit remote add origin http://你的虚拟机ip:3000/zcr/test.git\r\ngit push -u origin main\r\n```\r\n', null, '1', null, null, '1665969060', '1', null, null, null);
 INSERT INTO `sl_article` VALUES ('297', '371', '377', 'redis安装和配置', null, null, 'nicholas', null, null, '\r\n官方地址\r\n\r\nhttps://github.com/redis/redis/releases\r\n\r\n下载解压\r\n\r\n```shell\r\nwget https://github.com/redis/redis/archive/refs/tags/6.2.14.tar.gz\r\ntar xzvf 6.2.14.tar.gz\r\n```\r\n安装\r\n```shell\r\nyum -y install gcc gcc-c++ libstdc++-devel\r\ncd redis-6.2.14\r\nmake \r\ncd src \r\nmake install PREFIX=/usr/local/redis\r\n```\r\n移动配置文件到安装目录下\r\n```shell\r\ncd ../ \r\nmkdir -p /usr/local/redis/etc\r\nmv redis.conf /usr/local/redis/etc\r\n```\r\n配置redis为后台启动，将daemonize no 改成daemonize yes，设置redis端口和密码，将port 6379 改成 port 你的端口，去掉requirepass注释，并设置requirepass 你的密码。\r\n\r\n```shell\r\nvi /usr/local/redis/etc/redis.conf\r\n```\r\n开启redis\r\n```shell\r\n/usr/local/redis/bin/redis-server /usr/local/redis/etc/redis.conf\r\n```\r\n登录操作redis\r\n```shell\r\n/usr/local/redis/bin/redis-cli -p 端口 -h 主机\r\n//如果设置了密码，你需要执行下面命令才能操作redis\r\nauth 你的密码\r\n```\r\n关闭redis\r\n```shell\r\n/usr/local/redis/bin/redis-cli shutdown\r\n```\r\n指定端口和密码关闭\r\n```shell\r\n/usr/local/redis/bin/redis-cli -p 端口 -a 密码 shutdown\r\n```\r\n', null, '1', null, null, '1665969060', '1', null, null, null);
 INSERT INTO `sl_article` VALUES ('298', '371', '381', 'golang安装和配置', null, null, 'nicholas', null, null, '\r\n官方地址\r\n\r\nhttps://go.dev/\r\n\r\n下载\r\n\r\n```bash\r\nwget https://go.dev/dl/go1.22.0.linux-amd64.tar.gz\r\n```\r\n\r\n安装\r\n\r\n```bash\r\ntar -xvf go1.22.0.linux-amd64.tar.gz \r\nmv go  /usr/local\r\n```\r\n\r\n查看版本和env\r\n\r\n```bash\r\n/usr/local/go/bin/go version\r\n/usr/local/go/bin/go env\r\n```\r\n\r\n设置环境变量，创建一个目录用于GOPATH\r\n\r\n```bash\r\nmkdir /home/go\r\n```\r\n\r\n打开.bashrc文件\r\n\r\n```bash\r\nvim $HOME/.bashrc\r\n```\r\n\r\n添加环境变量\r\n\r\n```bash\r\nGOROOT=/usr/local/go\r\nGOPATH=/home/go\r\nPATH=$PATH:$GOROOT/bin:$GOPATH/bin\r\n```\r\n\r\n生效配置\r\n\r\n```bash\r\nsource  $HOME/.bashrc\r\n```\r\n\r\n开启模块支持\r\n\r\n```bash\r\ngo env  -w GO111MODULE=on\r\n```\r\n\r\n由于有些包下载速度或者网络上有问题，修改代理。\r\n\r\n```bash\r\ngo env -w GOPROXY=https://goproxy.cn,direct\r\n```', null, '1', null, null, '1665969060', '1', null, null, null);
-INSERT INTO `sl_article` VALUES ('299', '371', '382', 'php安装和配置', null, null, 'nicholas', null, null, '\r\n官网下载\r\n\r\nhttps://www.php.net/releases/\r\n\r\n\r\n下载\r\n\r\n```bash\r\nwget https://www.php.net/distributions/php-7.3.33.tar.gz --no-check-certificate\r\n```\r\n\r\n安装依赖\r\n\r\n```bash\r\nyum -y install libxml2 libxml2-devel sqlite-devel openssl openssl-devel oniguruma oniguruma-devel libcurl-devel autoconf libjpeg libjpeg-devel libpng libpng-devel freetype freetype-devel pcre-devel libxslt libxslt-devel wget \r\n```\r\n\r\n\r\n解压并进入目录。\r\n\r\n```bash\r\ntar -xzvf php-7.3.33.tar.gz\r\ncd php-7.3.33\r\n```\r\n生成configure配置文件。这里可能由于php版本不一样，某些配置可能变更或者废弃，可以通过./configure --help查看\r\n\r\n```bash\r\n./configure \\\r\n--prefix=/usr/local/php \\\r\n--exec-prefix=/usr/local/php \\\r\n--bindir=/usr/local/php/bin \\\r\n--sbindir=/usr/local/php/sbin \\\r\n--includedir=/usr/local/php/include \\\r\n--libdir=/usr/local/php/lib/php \\\r\n--mandir=/usr/local/php/php/man \\\r\n--with-config-file-path=/usr/local/php/etc \\\r\n--with-curl \\\r\n--with-freetype-dir \\\r\n--with-gd \\\r\n--with-gettext \\\r\n--with-iconv-dir \\\r\n--with-kerberos \\\r\n--with-libdir=lib64 \\\r\n--with-libxml-dir \\\r\n--with-mysqli \\\r\n--with-openssl \\\r\n--with-pcre-regex \\\r\n--with-pdo-mysql \\\r\n--with-pdo-sqlite \\\r\n--with-pear \\\r\n--with-png-dir \\\r\n--with-xmlrpc \\\r\n--with-xsl \\\r\n--with-zlib \\\r\n--enable-fpm \\\r\n--enable-bcmath \\\r\n--enable-libxml \\\r\n--enable-inline-optimization \\\r\n--enable-mbregex \\\r\n--enable-mbstring \\\r\n--enable-opcache \\\r\n--enable-pcntl \\\r\n--enable-shmop \\\r\n--enable-soap \\\r\n--enable-sockets \\\r\n--enable-sysvsem \\\r\n--enable-xml \\\r\n--enable-zip \\\r\n--enable-mbstring \\\r\n--enable-pcntl\r\n```\r\n编译安装。\r\n\r\n```bash\r\nmake && make install\r\n```\r\n查看安装版本。\r\n\r\n```bash\r\n/usr/local/php/bin/php --version\r\n```\r\n在php-7.3.33复制php.ini到配置目录。\r\n\r\n```bash\r\ncp php.ini-production /usr/local/php/etc/php.ini\r\n```\r\n在php-7.3.33复制目录下的 sapi/fpm/init.d.php-fpm 文件拷贝到系统配置 /etc/init.d 目录下，并重命名为 php-fpm，并且给可执行权限。\r\n\r\n```bash\r\ncp sapi/fpm/init.d.php-fpm /etc/init.d/php-fpm \r\nchmod +x /etc/init.d/php-fpm\r\n```\r\n添加php-fpm 配置文件，在php安装目录下的 /usr/local/php/etc/php-fpm.conf.default 文件拷贝到同目录下，并重命名为 php-fpm.conf。\r\n\r\n```bash\r\ncp /usr/local/php/etc/php-fpm.conf.default /usr/local/php/etc/php-fpm.conf\r\n```\r\n添加 www.conf 配置文件，将php安装目录下的 /usr/local/php/etc/php-fpm.d/www.conf.default 文件拷贝同目录下并重命名为 www.conf。\r\n\r\n```bash\r\ncp /usr/local/php/etc/php-fpm.d/www.conf.default /usr/local/php/etc/php-fpm.d/www.conf\r\n```\r\n添加php安装目录到系统环境变量，创建并打开文件php.sh。\r\n\r\n```bash\r\nvim /etc/profile.d/php.sh \r\nexport PATH=$PATH:/usr/local/php/bin/:/usr/local/php/sbin/\r\n```\r\n使用source立即生效刚刚添加的php环境变量 。\r\n\r\n```bash\r\nsource /etc/profile.d/php.sh\r\n```\r\n启动php\r\n\r\n```bash\r\nservice php-fpm start\r\n```\r\n查看php进程和fastcgi监听端口(默认是9000)。\r\n\r\n```bash\r\n查看php进程\r\nps aux|grep php\r\n查看fastcgi监听的端口\r\nnetstat -tnl |grep 9000\r\n```\r\n设置开机启动PHP服务。\r\n\r\n```bash\r\n配置系统配置目录下的 php-fpm 文件为可执行权限\r\nchmod +x /etc/init.d/php-fpm\r\n将系统配置目录下的 `php-fpm` 添加到 `系统服务`\r\nchkconfig --add php-fpm\r\n设置 `php-fpm` `系统服务` 为开机启动\r\nchkconfig php-fpm on\r\n```', null, '1', null, null, '1665969060', '1', null, null, null);
+INSERT INTO `sl_article` VALUES ('299', '371', '382', 'php安装和配置', '', '', 'nicholas', '', '', '\n### 官网下载\n\nhttps://www.php.net/releases/\n\n\n下载\n\n```bash\nwget https://www.php.net/distributions/php-7.3.33.tar.gz --no-check-certificate\n```\n\n安装依赖\n\n```bash\nyum -y install libxml2 libxml2-devel sqlite-devel openssl openssl-devel oniguruma oniguruma-devel libcurl-devel autoconf libjpeg libjpeg-devel libpng libpng-devel freetype freetype-devel pcre-devel libxslt libxslt-devel wget \n```\n\n\n解压并进入目录。\n\n```bash\ntar -xzvf php-7.3.33.tar.gz\ncd php-7.3.33\n```\n生成configure配置文件。这里可能由于php版本不一样，某些配置可能变更或者废弃，可以通过./configure --help查看\n\n```bash\n./configure \\\n--prefix=/usr/local/php \\\n--exec-prefix=/usr/local/php \\\n--bindir=/usr/local/php/bin \\\n--sbindir=/usr/local/php/sbin \\\n--includedir=/usr/local/php/include \\\n--libdir=/usr/local/php/lib/php \\\n--mandir=/usr/local/php/php/man \\\n--with-config-file-path=/usr/local/php/etc \\\n--with-curl \\\n--with-freetype-dir \\\n--with-gd \\\n--with-gettext \\\n--with-iconv-dir \\\n--with-kerberos \\\n--with-libdir=lib64 \\\n--with-libxml-dir \\\n--with-mysqli \\\n--with-openssl \\\n--with-pcre-regex \\\n--with-pdo-mysql \\\n--with-pdo-sqlite \\\n--with-pear \\\n--with-png-dir \\\n--with-xmlrpc \\\n--with-xsl \\\n--with-zlib \\\n--enable-fpm \\\n--enable-bcmath \\\n--enable-libxml \\\n--enable-inline-optimization \\\n--enable-mbregex \\\n--enable-mbstring \\\n--enable-opcache \\\n--enable-pcntl \\\n--enable-shmop \\\n--enable-soap \\\n--enable-sockets \\\n--enable-sysvsem \\\n--enable-xml \\\n--enable-zip \\\n--enable-mbstring \\\n--enable-pcntl\n```\n编译安装。\n\n```bash\nmake && make install\n```\n查看安装版本。\n\n```bash\n/usr/local/php/bin/php --version\n```\n在php-7.3.33复制php.ini到配置目录。\n\n```bash\ncp php.ini-production /usr/local/php/etc/php.ini\n```\n在php-7.3.33复制目录下的 sapi/fpm/init.d.php-fpm 文件拷贝到系统配置 /etc/init.d 目录下，并重命名为 php-fpm，并且给可执行权限。\n\n```bash\ncp sapi/fpm/init.d.php-fpm /etc/init.d/php-fpm \nchmod +x /etc/init.d/php-fpm\n```\n添加php-fpm 配置文件，在php安装目录下的 /usr/local/php/etc/php-fpm.conf.default 文件拷贝到同目录下，并重命名为 php-fpm.conf。\n\n```bash\ncp /usr/local/php/etc/php-fpm.conf.default /usr/local/php/etc/php-fpm.conf\n```\n添加 www.conf 配置文件，将php安装目录下的 /usr/local/php/etc/php-fpm.d/www.conf.default 文件拷贝同目录下并重命名为 www.conf。\n\n```bash\ncp /usr/local/php/etc/php-fpm.d/www.conf.default /usr/local/php/etc/php-fpm.d/www.conf\n```\n添加php安装目录到系统环境变量，创建并打开文件php.sh。\n\n```bash\nvim /etc/profile.d/php.sh \nexport PATH=$PATH:/usr/local/php/bin/:/usr/local/php/sbin/\n```\n使用source立即生效刚刚添加的php环境变量 。\n\n```bash\nsource /etc/profile.d/php.sh\n```\n启动php\n\n```bash\nservice php-fpm start\n```\n查看php进程和fastcgi监听端口(默认是9000)。\n\n```bash\n查看php进程\nps aux|grep php\n查看fastcgi监听的端口\nnetstat -tnl |grep 9000\n```\n设置开机启动PHP服务。\n\n```bash\n配置系统配置目录下的 php-fpm 文件为可执行权限\nchmod +x /etc/init.d/php-fpm\n将系统配置目录下的 `php-fpm` 添加到 `系统服务`\nchkconfig --add php-fpm\n设置 `php-fpm` `系统服务` 为开机启动\nchkconfig php-fpm on\n```', '0', '1', '0', '0', '1665969060', '1', '', '0', '1775046747');
 INSERT INTO `sl_article` VALUES ('300', '371', '377', 'redis主从集群配置', null, null, 'nicholas', null, null, 'redis的主从配置实际上是配置多个实例，然后通过命令、配置、启动方式去配置是作为主实例还是从实例。主从配置的时候，需要把aof持久化关闭，rdb持久化开启。\r\n\r\n新建/myconfig/myredis文件夹，复制一份基础配置到/myconfig/myredis文件夹。\r\n\r\n```shell\r\ncp /usr/local/redis/etc/redis.conf /myconfig/myredis/redis.conf\r\n```\r\n\r\n在/myconfig/myredis文件夹新建四个实例配置分别是\r\n\r\nredis_25001.conf(主),redis_25002.conf(从),redis_25003.conf(从),redis_25004.conf(从)\r\n\r\n25001实例配置\r\n\r\n```shell\r\n#include包含基础配置文件\r\ninclude /myconfig/myredis/redis.conf\r\n# 监听的IP地址和端口\r\nbind 0.0.0.0\r\nport 25001\r\n#进程号\r\npidfile /var/run/redis_25001.pid\r\n#配置rdb持久化文件\r\ndbfilename dump25001.rdb\r\n#密码\r\nmasterauth 你的主库授权密码\r\n```\r\n\r\n25002实例的配置\r\n\r\n```shell\r\n#include包含基础配置文件\r\ninclude /myconfig/myredis/redis.conf\r\n#监听的IP地址和端口\r\nbind 0.0.0.0\r\nport 25002\r\n#进程号\r\npidfile /var/run/redis_25002.pid\r\n#配置rdb持久化文件\r\ndbfilename dump25002.rdb\r\n#密码\r\nmasterauth 你的主库授权密码\r\n```\r\n\r\n25003实例的配置\r\n\r\n```shell\r\n#include包含基础配置文件\r\n#默认基础配置一般放这里;/usr/local/redis/etc/redis.conf,可以复制一份到自己定义的目录下\r\ninclude /myconfig/myredis/redis.conf\r\n#监听的IP地址和端口\r\nbind 0.0.0.0\r\nport 25003\r\n#进程号\r\npidfile /var/run/redis_25003.pid\r\n#配置rdb持久化文件\r\ndbfilename dump25003.rdb\r\n#密码\r\nmasterauth 你的主库授权密码\r\n```\r\n\r\n25004实例配置\r\n\r\n```shell\r\n#include包含基础配置文件\r\ninclude /myconfig/myredis/redis.conf\r\n#监听的IP地址和端口\r\nbind 0.0.0.0\r\nport 25004\r\n#进程号\r\npidfile /var/run/redis_25004.pid\r\n#配置rdb持久化文件\r\ndbfilename dump25004.rdb\r\n#密码\r\nmasterauth 你的主库授权密码\r\n#配置文件指定主库\r\nreplicaof 127.0.0.1 25001\r\n```\r\n\r\n分别启动四个实例\r\n\r\n```shell\r\ncd /usr/local/redis/bin && ./redis-server /myconfig/myredis/redis_25001.conf\r\ncd /usr/local/redis/bin && ./redis-server /myconfig/myredis/redis_25002.conf\r\ncd /usr/local/redis/bin && ./redis-server /myconfig/myredis/redis_25003.conf\r\ncd /usr/local/redis/bin && ./redis-server /myconfig/myredis/redis_25004.conf\r\n```\r\n\r\n查看redis进程,看看是否都启动成功。\r\n\r\n```shell\r\nps aux|grep redis\r\n```\r\n\r\n登录查看目前redis主从信息，此时应该都是master。\r\n\r\n```shell\r\ninfo  replication\r\n输出\r\n# Replication\r\nrole:master\r\nconnected_slaves:0\r\nmaster_failover_state:no-failover\r\nmaster_replid:f04f09d212543ff4168600afa6c2e4a4cff3abe5\r\nmaster_replid2:0000000000000000000000000000000000000000\r\nmaster_repl_offset:0\r\nsecond_repl_offset:-1\r\nrepl_backlog_active:0\r\nrepl_backlog_size:1048576\r\nrepl_backlog_first_byte_offset:0\r\nrepl_backlog_histlen:0\r\n```\r\n\r\n设置主从有三种方式\r\n\r\n一是启动的时候slaveof或者replicaof（临时）指定主库，这里用25001的机器作为25001的从库启动。\r\n\r\n```shell\r\ncd /usr/local/redis/bin && ./redis-server /myconfig/myredis/redis_25002.conf --slaveof 127.0.0.1 25001\r\n```\r\n\r\n二是登录到客户端，通过命令设置(临时)指定主库 客户端登录25003，设置作为25001的从库。\r\n\r\n```shell\r\n--slaveof 127.0.0.1 25001\r\n```\r\n\r\n三是通过实例配置文件(永久)配置指定主库，对于25004,因为在实例配置文件的时候就指定了25001作为主库，所以不需要指定，启动就作为从库。\r\n\r\n登录再次查看目前redis主从信息，此时只有25001端口实例是master。三个从库实例\r\n\r\n```shell\r\ninfo  replication\r\n输出\r\n# Replication\r\nrole:master\r\nconnected_slaves:3\r\nslave0:ip=127.0.0.1,port=25003,state=online,offset=2182,lag=0\r\nslave1:ip=127.0.0.1,port=25002,state=online,offset=2182,lag=0\r\nslave2:ip=127.0.0.1,port=25004,state=online,offset=2182,lag=0\r\nmaster_failover_state:no-failover\r\nmaster_replid:4847c391e22378bf7b0b1541332d18a43d4a09ec\r\nmaster_replid2:0000000000000000000000000000000000000000\r\nmaster_repl_offset:2182\r\nsecond_repl_offset:-1\r\nrepl_backlog_active:1\r\nrepl_backlog_size:1048576\r\nrepl_backlog_first_byte_offset:1\r\nrepl_backlog_histlen:2182\r\n```\r\n\r\n查看数据是否能主从同步.\r\n\r\n```shell\r\nset domain iamzcr.com\r\nget domain\r\n#输出\r\niamzcr.com\r\n```\r\n', null, '1', null, null, '1665989060', '1', null, null, null);
 INSERT INTO `sl_article` VALUES ('301', '377', '383', '构建自己的小型PHP框架(一)', null, null, 'nicholas', null, null, '前面框架已经可以通过路由访问了，我们总不可能把业务写在各个路由的回调里面吧，所以需要按一般框架实现MVC.\r\n新增目录application,application目录下新建model，controller，view，开始我们的MVC\r\n进入controller，新增类CommonController\r\n```php\r\n<?php\r\n  namespace Application\\controller;\r\n\r\n  class CommonController\r\n  {\r\n    public $params = [];\r\n    public function __construct()\r\n    {\r\n      $this->params = $_POST;\r\n    }\r\n  }\r\n?>\r\n```\r\n新增类IndexController继承CommmonController\r\n```php\r\n<?php\r\n  namespace Application\\controller;\r\n  \r\n  class IndexController extends CommonController\r\n  {\r\n    public function Welcome()\r\n    {\r\n      echo \"hello\";\r\n    }\r\n  }\r\n?>\r\n```\r\n打开config/routes.php，配置路由指向Controller\r\n原来的路由\r\n```php\r\n<?php\r\n\r\n  use NoahBuscher\\Macaw\\Macaw;\r\n\r\n  Macaw::get(\'/\', function() {\r\n    echo \"success\";\r\n  });\r\n  \r\n  Macaw::get(\'(:all)\', function($error) {\r\n    echo \'routes fail\'.$error;\r\n  });\r\n  \r\n  Macaw::dispatch();\r\n?>\r\n```\r\n配置后的路由\r\n```php\r\n<?php\r\n  \r\n  use NoahBuscher\\Macaw\\Macaw;\r\n  \r\n  Macaw::get(\'index/welcome\', \'Application\\controller\\IndexController@Index\');\r\n  \r\n  Macaw::get(\'(:all)\', function ($fu) {\r\n    echo \'invalid routes\' . $fu;\r\n  });\r\n  \r\n  Macaw::dispatch();\r\n?>\r\n```\r\n访问下http://127.0.0.14016/index/welcome，结果\r\n```php\r\nClass \'Application\\controller\\IndexController\' not found\r\n```\r\n为什么呢，原来我们框架还没配置PSR-4规范（也可以用PSR-0规范去处理，但是不推荐）\r\n打开composer.json，配置命名空间指向目录\r\n修改前\r\n```php\r\n{\r\n  \"name\": \"root/sh_framework\",\r\n  \"require\": {\r\n      \"noahbuscher/macaw\": \"dev-master\"\r\n  }\r\n}\r\n```\r\n修改后\r\n```php\r\n{\r\n  \"name\": \"root/framework\",\r\n  \"require\": {\r\n      \"noahbuscher/macaw\": \"dev-master\"\r\n  },\r\n  \"autoload\": {\r\n      \"psr-4\": {\r\n          \"Application\\\\\": \"application/\"\r\n      }\r\n  }\r\n}\r\n```\r\n运行\r\n```bash\r\n/usr/local/bin/php composer.phar dump-autoload\r\n```\r\n\r\n这个时候，就把我们的命名空间指向到对应的目录里面了，继续访问上面的路由看看会不会输出：hello\r\n我们的model也可以使用了，一个简单的api框架已完成。\r\n我们的view可以直接PHP输出，如在view目录下新建welcome.php\r\n\r\n```php\r\n<?php\r\n  echo \"这是一个view\";\r\n?>\r\n```\r\n修改下IndexController的welcome方法，require你的welcome.php\r\n```php\r\n<?php\r\n  namespace Application\\controller;\r\n\r\n  class IndexController extends CommonController\r\n  {\r\n    public function Welcome()\r\n    {\r\n      require dirname(__FILE__).\'/../view/wecome.php\';\r\n    }\r\n  }\r\n\r\n?>\r\n```\r\n结果会输出：这是一个view。\r\n利用composer引入各种你需要的类库\r\n当我们需要操作mongodb扩展的时候\r\n\r\n```bash\r\n/usr/local/php/bin/php composer.phar require mongodb/mongodb\r\n```\r\n\r\n当我们需要http请求的时候\r\n\r\n```bash\r\n/usr/local/php/bin/php composer.phar require guzzlehttp/guzzle\r\n```\r\n\r\n当我们需要操作redis的时候\r\n\r\n```bash\r\n/usr/local/php/bin/php composer.phar require /usr/local/php/bin/php composer.phar require guzzlehttp/guzzle\r\n```\r\n\r\n至此，一个简单的PHP框架搭建完成。可以继续在这基础上完善自己额外需要的功能，比如加入中间件，加入验证等', '1', '1', null, null, '1664989060', '1', null, null, null);
 INSERT INTO `sl_article` VALUES ('302', '377', '383', '构建自己的小型PHP框架(二)', null, null, 'nicholas', null, null, '前面框架已经可以通过路由访问了，我们总不可能把业务写在各个路由的回调里面吧，所以需要按一般框架实现MVC.\r\n新增目录application,application目录下新建model，controller，view，开始我们的MVC\r\n进入controller，新增类CommonController\r\n```php\r\n<?php\r\n  namespace Application\\controller;\r\n\r\n  class CommonController\r\n  {\r\n    public $params = [];\r\n    public function __construct()\r\n    {\r\n      $this->params = $_POST;\r\n    }\r\n  }\r\n?>\r\n```\r\n新增类IndexController继承CommmonController\r\n```php\r\n<?php\r\n  namespace Application\\controller;\r\n  \r\n  class IndexController extends CommonController\r\n  {\r\n    public function Welcome()\r\n    {\r\n      echo \"hello\";\r\n    }\r\n  }\r\n?>\r\n```\r\n打开config/routes.php，配置路由指向Controller\r\n原来的路由\r\n```php\r\n<?php\r\n\r\n  use NoahBuscher\\Macaw\\Macaw;\r\n\r\n  Macaw::get(\'/\', function() {\r\n    echo \"success\";\r\n  });\r\n  \r\n  Macaw::get(\'(:all)\', function($error) {\r\n    echo \'routes fail\'.$error;\r\n  });\r\n  \r\n  Macaw::dispatch();\r\n?>\r\n```\r\n配置后的路由\r\n```php\r\n<?php\r\n  \r\n  use NoahBuscher\\Macaw\\Macaw;\r\n  \r\n  Macaw::get(\'index/welcome\', \'Application\\controller\\IndexController@Index\');\r\n  \r\n  Macaw::get(\'(:all)\', function ($fu) {\r\n    echo \'invalid routes\' . $fu;\r\n  });\r\n  \r\n  Macaw::dispatch();\r\n?>\r\n```\r\n访问下http://127.0.0.14016/index/welcome，结果\r\n```php\r\nClass \'Application\\controller\\IndexController\' not found\r\n```\r\n为什么呢，原来我们框架还没配置PSR-4规范（也可以用PSR-0规范去处理，但是不推荐）\r\n打开composer.json，配置命名空间指向目录\r\n修改前\r\n```php\r\n{\r\n  \"name\": \"root/sh_framework\",\r\n  \"require\": {\r\n      \"noahbuscher/macaw\": \"dev-master\"\r\n  }\r\n}\r\n```\r\n修改后\r\n```php\r\n{\r\n  \"name\": \"root/framework\",\r\n  \"require\": {\r\n      \"noahbuscher/macaw\": \"dev-master\"\r\n  },\r\n  \"autoload\": {\r\n      \"psr-4\": {\r\n          \"Application\\\\\": \"application/\"\r\n      }\r\n  }\r\n}\r\n```\r\n运行\r\n```bash\r\n/usr/local/bin/php composer.phar dump-autoload\r\n```\r\n\r\n这个时候，就把我们的命名空间指向到对应的目录里面了，继续访问上面的路由看看会不会输出：hello\r\n我们的model也可以使用了，一个简单的api框架已完成。\r\n我们的view可以直接PHP输出，如在view目录下新建welcome.php\r\n\r\n```php\r\n<?php\r\n  echo \"这是一个view\";\r\n?>\r\n```\r\n修改下IndexController的welcome方法，require你的welcome.php\r\n```php\r\n<?php\r\n  namespace Application\\controller;\r\n\r\n  class IndexController extends CommonController\r\n  {\r\n    public function Welcome()\r\n    {\r\n      require dirname(__FILE__).\'/../view/wecome.php\';\r\n    }\r\n  }\r\n\r\n?>\r\n```\r\n结果会输出：这是一个view。\r\n\r\n利用composer引入各种你需要的类库\r\n\r\n当我们需要操作mongodb扩展的时候\r\n\r\n```bash\r\n/usr/local/php/bin/php composer.phar require mongodb/mongodb\r\n```\r\n\r\n当我们需要http请求的时候\r\n\r\n```bash\r\n/usr/local/php/bin/php composer.phar require guzzlehttp/guzzle\r\n```\r\n\r\n当我们需要操作redis的时候\r\n\r\n```bash\r\n/usr/local/php/bin/php composer.phar require /usr/local/php/bin/php composer.phar require guzzlehttp/guzzle\r\n```\r\n\r\n至此，一个简单的PHP框架搭建完成。可以继续在这基础上完善自己额外需要的功能，比如加入中间件，加入验证等', '1', '1', null, null, '1664889060', '1', null, null, null);
