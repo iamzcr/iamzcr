@@ -5,7 +5,7 @@ import { logApi } from '../api'
 
 const logs = ref<any[]>([])
 const loading = ref(false)
-const pagination = ref({ page: 1, pageSize: 10, total: 0 })
+const pagination = ref({ page: 1, pageSize: 10, itemCount: 0 })
 
 function formatDate(time: number | string) {
   if (!time) return '-'
@@ -34,7 +34,7 @@ async function loadLogs() {
   try {
     const res = await logApi.list({ page: pagination.value.page, page_size: pagination.value.pageSize })
     logs.value = res.data.data.list || res.data.data
-    pagination.value.total = res.data.data.total || 0
+    pagination.value.itemCount = res.data.data.total || 0
   } finally {
     loading.value = false
   }
@@ -45,6 +45,6 @@ onMounted(loadLogs)
 
 <template>
   <div>
-    <n-data-table :columns="columns" :data="logs" :loading="loading" :pagination="pagination" @update:page="pagination.page = $event; loadLogs()" />
+    <n-data-table :columns="columns" :data="logs" :loading="loading" remote :pagination="pagination" @update:page="pagination.page = $event; loadLogs()" />
   </div>
 </template>

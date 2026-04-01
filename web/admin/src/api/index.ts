@@ -64,7 +64,7 @@ export const menuApi = {
 }
 
 export const tagsApi = {
-  list: () => api.get('/tags'),
+  list: (params?: any) => api.get('/tags', { params }),
   get: (id: number) => api.get(`/tags/${id}`),
   create: (data: any) => api.post('/tags', data),
   update: (id: number, data: any) => api.put(`/tags/${id}`, data),
@@ -72,7 +72,7 @@ export const tagsApi = {
 }
 
 export const directoryApi = {
-  list: () => api.get('/directories'),
+  list: (params?: any) => api.get('/directories', { params }),
   get: (id: number) => api.get(`/directories/${id}`),
   create: (data: any) => api.post('/directories', data),
   update: (id: number, data: any) => api.put(`/directories/${id}`, data),
@@ -85,7 +85,7 @@ export const websiteApi = {
 }
 
 export const attachApi = {
-  list: () => api.get('/attaches'),
+  list: (params?: any) => api.get('/attaches', { params }),
   get: (id: number) => api.get(`/attaches/${id}`),
   create: (data: any) => api.post('/attaches', data),
   update: (id: number, data: any) => api.put(`/attaches/${id}`, data),
@@ -93,7 +93,7 @@ export const attachApi = {
 }
 
 export const langApi = {
-  list: () => api.get('/langs'),
+  list: (params?: any) => api.get('/langs', { params }),
   get: (id: number) => api.get(`/langs/${id}`),
   create: (data: any) => api.post('/langs', data),
   update: (id: number, data: any) => api.put(`/langs/${id}`, data),
@@ -108,7 +108,7 @@ export const logApi = {
 }
 
 export const messageApi = {
-  list: () => api.get('/messages'),
+  list: (params?: any) => api.get('/messages', { params }),
   get: (id: number) => api.get(`/messages/${id}`),
   create: (data: any) => api.post('/messages', data),
   update: (id: number, data: any) => api.put(`/messages/${id}`, data),
@@ -116,7 +116,7 @@ export const messageApi = {
 }
 
 export const permitApi = {
-  list: () => api.get('/permits'),
+  list: (params?: any) => api.get('/permits', { params }),
   get: (id: number) => api.get(`/permits/${id}`),
   create: (data: any) => api.post('/permits', data),
   update: (id: number, data: any) => api.put(`/permits/${id}`, data),

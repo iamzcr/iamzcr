@@ -40,13 +40,13 @@ const renderedContent = computed(() => md.render(form.value.content))
 
 async function loadData() {
   const [catRes, dirRes, tagRes] = await Promise.all([
-    categoryApi.list(),
-    directoryApi.list(),
-    tagsApi.list()
+    categoryApi.list({ page: 1, page_size: 1000 }),
+    directoryApi.list({ page: 1, page_size: 1000 }),
+    tagsApi.list({ page: 1, page_size: 1000 })
   ])
-  categories.value = catRes.data.data
-  directories.value = dirRes.data.data
-  allTags.value = tagRes.data.data
+  categories.value = catRes.data.data.list || catRes.data.data || []
+  directories.value = dirRes.data.data.list || dirRes.data.data || []
+  allTags.value = tagRes.data.data.list || tagRes.data.data || []
 }
 
 async function loadArticle() {

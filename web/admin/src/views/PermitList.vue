@@ -6,7 +6,7 @@ import { permitApi } from '../api'
 const permits = ref<any[]>([])
 const loading = ref(false)
 const showModal = ref(false)
-const pagination = ref({ page: 1, pageSize: 10, total: 0 })
+const pagination = ref({ page: 1, pageSize: 10, itemCount: 0 })
 const editingPermit = ref({ id: 0, type: 1, mark: '', parent: 0, name: '', modules: '', author: '', status: 1, weight: 0 })
 
 function formatDate(time: number | string) {
@@ -38,7 +38,7 @@ async function loadPermits() {
   try {
     const res = await permitApi.list({ page: pagination.value.page, page_size: pagination.value.pageSize })
     permits.value = res.data.data.list || res.data.data
-    pagination.value.total = res.data.data.total || 0
+    pagination.value.itemCount = res.data.data.total || 0
   } finally {
     loading.value = false
   }
@@ -67,7 +67,7 @@ onMounted(loadPermits)
     <div style="margin-bottom: 16px; display: flex; justify-content: flex-end;">
       <n-button type="primary" @click="openEdit()">新建权限</n-button>
     </div>
-    <n-data-table :columns="columns" :data="permits" :loading="loading" :pagination="pagination" @update:page="pagination.page = $event; loadPermits()" />
+    <n-data-table :columns="columns" :data="permits" :loading="loading" remote :pagination="pagination" @update:page="pagination.page = $event; loadPermits()" />
     <n-modal v-model:show="showModal" preset="card" title="权限管理" style="width: 500px">
       <n-form :model="editingPermit">
         <n-form-item label="标识">

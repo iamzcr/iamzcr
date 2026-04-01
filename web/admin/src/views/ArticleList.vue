@@ -8,7 +8,7 @@ const router = useRouter()
 
 const articles = ref<any[]>([])
 const loading = ref(false)
-const pagination = ref({ page: 1, pageSize: 10, total: 0 })
+const pagination = ref({ page: 1, pageSize: 10, itemCount: 0 })
 
 function formatDate(time: number | string) {
   if (!time) return '-'
@@ -38,7 +38,7 @@ async function loadArticles() {
   try {
     const res = await articleApi.list({ page: pagination.value.page, page_size: pagination.value.pageSize })
     articles.value = res.data.data.list
-    pagination.value.total = res.data.data.total
+    pagination.value.itemCount = res.data.data.total
   } finally {
     loading.value = false
   }
@@ -56,6 +56,7 @@ onMounted(loadArticles)
       :columns="columns"
       :data="articles"
       :loading="loading"
+      remote
       :pagination="pagination"
       @update:page="pagination.page = $event; loadArticles()"
     />

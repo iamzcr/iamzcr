@@ -6,7 +6,7 @@ import { tagsApi } from '../api'
 const tags = ref<any[]>([])
 const loading = ref(false)
 const showModal = ref(false)
-const pagination = ref({ page: 1, pageSize: 10, total: 0 })
+const pagination = ref({ page: 1, pageSize: 10, itemCount: 0 })
 const editingTag = ref({ id: 0, type: '', mark: '', author: '', name: '', weight: 0, status: 1, is_hot: 0 })
 
 const columns = [
@@ -24,7 +24,7 @@ async function loadTags() {
   try {
     const res = await tagsApi.list({ page: pagination.value.page, page_size: pagination.value.pageSize })
     tags.value = res.data.data.list || res.data.data
-    pagination.value.total = res.data.data.total || 0
+    pagination.value.itemCount = res.data.data.total || 0
   } finally {
     loading.value = false
   }
@@ -53,7 +53,7 @@ onMounted(loadTags)
     <div style="margin-bottom: 16px; display: flex; justify-content: flex-end;">
       <n-button type="primary" @click="openEdit()">新建标签</n-button>
     </div>
-    <n-data-table :columns="columns" :data="tags" :loading="loading" :pagination="pagination" @update:page="pagination.page = $event; loadTags()" />
+    <n-data-table :columns="columns" :data="tags" :loading="loading" remote :pagination="pagination" @update:page="pagination.page = $event; loadTags()" />
     <n-modal v-model:show="showModal" preset="card" title="标签管理" style="width: 500px">
       <n-form :model="editingTag">
         <n-form-item label="名称">

@@ -87,34 +87,57 @@ async function handleLogin() {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #ffffff;
 }
 
 .login-card {
   width: 380px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
+}
+
+.login-card :deep(.n-card__content) {
+  padding-top: 0;
 }
 
 .login-card :deep(.n-card-header) {
   text-align: center;
-  padding-bottom: 0;
+  padding-bottom: 18px;
 }
 
 .login-card :deep(.n-card-header__main) {
   font-size: 20px;
   font-weight: 600;
-  color: #1a365d;
+  color: #0f172a;
+  line-height: 1.6;
 }
 
 .login-card :deep(.n-form-item .n-form-item-label) {
   justify-content: flex-end;
+  color: #475569;
+  font-weight: 500;
+  line-height: 40px;
+}
+
+.login-card :deep(.n-form-item) {
+  margin-bottom: 10px;
 }
 
 .login-card :deep(.n-input) {
   --n-border-radius: 6px;
 }
 
+.login-card :deep(.n-input__input-el),
+.login-card :deep(.n-input__textarea-el) {
+  line-height: 1.6;
+}
+
 .login-card :deep(.n-button) {
   --n-border-radius: 6px;
+  --n-color: #2563eb;
+  --n-color-hover: #1d4ed8;
+  --n-color-pressed: #1e40af;
+  height: 40px;
 }
 </style>

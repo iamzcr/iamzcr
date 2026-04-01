@@ -6,7 +6,7 @@ import { messageApi } from '../api'
 const messages = ref<any[]>([])
 const loading = ref(false)
 const showModal = ref(false)
-const pagination = ref({ page: 1, pageSize: 10, total: 0 })
+const pagination = ref({ page: 1, pageSize: 10, itemCount: 0 })
 const editingMessage = ref({ id: 0, ip: '', name: '', email: '', url: '', is_reply: 0, content: '' })
 
 function formatDate(time: number | string) {
@@ -39,7 +39,7 @@ async function loadMessages() {
   try {
     const res = await messageApi.list({ page: pagination.value.page, page_size: pagination.value.pageSize })
     messages.value = res.data.data.list || res.data.data
-    pagination.value.total = res.data.data.total || 0
+    pagination.value.itemCount = res.data.data.total || 0
   } finally {
     loading.value = false
   }
@@ -63,7 +63,7 @@ onMounted(loadMessages)
 
 <template>
   <div>
-    <n-data-table :columns="columns" :data="messages" :loading="loading" :pagination="pagination" @update:page="pagination.page = $event; loadMessages()" />
+    <n-data-table :columns="columns" :data="messages" :loading="loading" remote :pagination="pagination" @update:page="pagination.page = $event; loadMessages()" />
     <n-modal v-model:show="showModal" preset="card" title="留言管理" style="width: 500px">
       <n-form :model="editingMessage">
         <n-form-item label="姓名">

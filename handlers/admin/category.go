@@ -23,7 +23,7 @@ func (h *CategoryHandler) List(c *gin.Context) {
 
 	models.DB.Model(&models.Category{}).Count(&total)
 
-	models.DB.Order("weight DESC").Limit(10).Offset((parseInt(page) - 1) * parseInt(pageSize)).Find(&categories)
+	models.DB.Order("weight DESC").Limit(parseInt(pageSize)).Offset((parseInt(page) - 1) * parseInt(pageSize)).Find(&categories)
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,

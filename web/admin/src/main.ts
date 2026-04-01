@@ -4,6 +4,7 @@ import naive from 'naive-ui'
 import App from './App.vue'
 import './style.css'
 import Login from './views/Login.vue'
+import Index from './views/Index.vue'
 import ArticleList from './views/ArticleList.vue'
 import ArticleEdit from './views/ArticleEdit.vue'
 import CategoryList from './views/CategoryList.vue'
@@ -26,7 +27,7 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/login', component: Login },
-    { path: '/', redirect: '/articles' },
+    { path: '/', component: Index },
     { path: '/articles', component: ArticleList },
     { path: '/articles/new', component: ArticleEdit },
     { path: '/articles/edit/:id', component: ArticleEdit },

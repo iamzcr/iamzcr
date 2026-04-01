@@ -1,19 +1,28 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { NMenu, NDropdown, NButton } from 'naive-ui'
 import { menuApi, authApi } from './api'
 
-const collapsed = ref(false)
+const collapsed = ref(true)
 const route = useRoute()
 const router = useRouter()
 
 const adminInfo = ref<any>(null)
 const menuOptions = ref<any[]>([])
+const expandedKeys = ref<string[]>([])
+const isLoginPage = computed(() => route.path === '/login')
+const selectedMenuKey = computed(() => {
+  if (route.path.startsWith('/articles/edit/')) return '/articles'
+  return route.path
+})
 
 async function loadAdminInfo() {
   const token = localStorage.getItem('admin_token')
-  if (!token) return
+  if (!token) {
+    adminInfo.value = null
+    return
+  }
   
   try {
     const info = localStorage.getItem('admin_info')
@@ -31,73 +40,76 @@ async function loadAdminInfo() {
 
 async function loadMenus() {
   const token = localStorage.getItem('admin_token')
-  if (!token) return
+  if (!token) {
+    menuOptions.value = []
+    expandedKeys.value = []
+    return
+  }
   
   try {
-    const res = await menuApi.list()
-    const menus = res.data.data
+    const res = await menuApi.list({ page: 1, page_size: 1000 })
+    const menus = res.data.data.list || res.data.data
     
     if (!menus || menus.length === 0) {
       menuOptions.value = getDefaultMenus()
+      expandedKeys.value = []
       return
     }
-    
+
+    const normalizedMenus = menus
+      .filter((menu: any) => menu.status === 1)
+      .sort((a: any, b: any) => (b.weight || 0) - (a.weight || 0))
+
     const menuMap = new Map<number, any>()
-    const rootMenus: any[] = []
-    
-    menus.forEach((m: any) => {
-      if (m.status !== 1) return
-      menuMap.set(m.id, {
-        label: m.name,
-        key: m.url || String(m.id)
-      })
+    const childrenMap = new Map<number, any[]>()
+
+    normalizedMenus.forEach((menu: any) => {
+      menuMap.set(menu.id, menu)
+      const parent = Number(menu.parent || 0)
+      const siblings = childrenMap.get(parent) || []
+      siblings.push(menu)
+      childrenMap.set(parent, siblings)
     })
-    
-    menus.forEach((m: any) => {
-      if (m.status !== 1) return
-      const menu = menuMap.get(m.id)
-      if (!menu) return
-      
-      if (m.parent === 0) {
-        rootMenus.push(menu)
-      } else {
-        const parent = menuMap.get(m.parent)
-        if (parent) {
-          if (!parent.children) {
-            parent.children = []
-          }
-          parent.children.push(menu)
-        }
-      }
-    })
-    
-    menuOptions.value = rootMenus.length > 0 ? rootMenus : getDefaultMenus()
+
+    function toMenuOption(menu: any): any {
+      const childMenus = (childrenMap.get(menu.id) || []).map(toMenuOption)
+      const path = mapMenuPath(menu.url || String(menu.id))
+      return childMenus.length > 0
+        ? { label: menu.name, key: `menu-${menu.id}`, children: childMenus }
+        : { label: menu.name, key: path }
+    }
+
+    const roots = (childrenMap.get(0) || normalizedMenus.filter((menu: any) => !menuMap.has(Number(menu.parent))))
+      .map(toMenuOption)
+
+    menuOptions.value = roots.length > 0 ? roots : getDefaultMenus()
+    expandedKeys.value = []
   } catch (e) {
     console.error('Load menus error:', e)
     menuOptions.value = getDefaultMenus()
+    expandedKeys.value = []
   }
 }
 
 function getDefaultMenus() {
   return [
-    { label: '仪表盘', key: '/' },
-    { label: '文章管理', key: 'articles', children: [
-      { label: '文章列表', key: 'articles' },
-      { label: '新建文章', key: 'articles/new' }
+    { label: '概况', key: '/' },
+    { label: '文章管理', key: 'menu-articles', children: [
+      { label: '文章列表', key: '/articles' },
+      { label: '新建文章', key: '/articles/new' }
     ]},
-    { label: '分类管理', key: 'categories' },
-    { label: '目录管理', key: 'directories' },
-    { label: '标签管理', key: 'tags' },
-    { label: '评论管理', key: 'comments' },
-    { label: '菜单管理', key: 'menus' },
-    { label: '网站设置', key: 'website' }
+    { label: '分类管理', key: '/categories' },
+    { label: '目录管理', key: '/directories' },
+    { label: '标签管理', key: '/tags' },
+    { label: '评论管理', key: '/comments' },
+    { label: '菜单管理', key: '/menus' },
+    { label: '网站设置', key: '/website' }
   ]
 }
 
-function handleMenuSelect(key: string) {
-  console.log('Menu selected:', key)
-  
+function mapMenuPath(key: string) {
   const pathMap: Record<string, string> = {
+    '/admin/index': '/',
     '/admin/article/list': '/articles',
     '/admin/article/add': '/articles/new',
     '/admin/category/list': '/categories',
@@ -116,12 +128,17 @@ function handleMenuSelect(key: string) {
     '/admin/permit/list': '/permits',
     '/admin/read/list': '/reads',
   }
-  
+
   let path = pathMap[key] || key
   if (!path.startsWith('/')) {
     path = '/' + path
   }
-  router.push(path)
+  return path
+}
+
+function handleMenuSelect(key: string) {
+  if (!key || !key.startsWith('/')) return
+  router.push(mapMenuPath(key))
 }
 
 const userOptions = [
@@ -141,25 +158,44 @@ function handleUserSelect(key: string) {
   }
 }
 
-onMounted(() => {
-  loadAdminInfo()
-  loadMenus()
-})
+watch(
+  isLoginPage,
+  (loginPage) => {
+    if (loginPage) {
+      adminInfo.value = null
+      menuOptions.value = []
+      expandedKeys.value = []
+      return
+    }
+
+    loadAdminInfo()
+    loadMenus()
+  },
+  { immediate: true }
+)
 </script>
 
 <template>
   <n-message-provider>
     <div id="app-container">
-      <div class="sidebar" v-if="route.path !== '/login'">
+      <div class="sidebar" v-if="!isLoginPage">
         <div class="logo">{{ collapsed ? 'B' : 'Blog Admin' }}</div>
         <n-menu
           :collapsed="collapsed"
+          :collapsed-width="64"
+          :collapsed-icon-size="18"
           :options="menuOptions"
+          :value="selectedMenuKey"
+          :expanded-keys="expandedKeys"
+          @update:expanded-keys="expandedKeys = $event"
           @update:value="handleMenuSelect"
         />
       </div>
-      <div class="main-content" v-if="route.path !== '/login'">
+      <div class="main-content" v-if="!isLoginPage">
         <div class="header">
+          <n-button text class="collapse-trigger" @click="collapsed = !collapsed" :title="collapsed ? '展开菜单' : '收起菜单'">
+            <span class="collapse-icon" aria-hidden="true">{{ collapsed ? '>>' : '<<' }}</span>
+          </n-button>
           <div class="user-info">
             <n-dropdown :options="userOptions" @select="handleUserSelect">
               <n-button text>
@@ -172,7 +208,7 @@ onMounted(() => {
           <router-view :key="route.fullPath" />
         </div>
       </div>
-      <div v-if="route.path === '/login'" class="login-page">
+      <div v-if="isLoginPage" class="login-page">
         <router-view />
       </div>
     </div>
@@ -199,37 +235,43 @@ body, html {
 
 #app-container > .sidebar {
   width: 240px;
-  background: #1a365d;
-  border-right: 1px solid #2c5282;
+  background: #ffffff;
+  border-right: 1px solid #e2e8f0;
   overflow-y: auto;
   flex-shrink: 0;
 }
 
 .sidebar :deep(.n-menu) {
   background: transparent;
-  color: #e2e8f0;
+  color: #334155;
 }
 
 .sidebar :deep(.n-menu-item-content) {
   background: transparent;
+  margin: 4px 10px;
+  border-radius: 10px;
 }
 
 .sidebar :deep(.n-menu-item-content:hover) {
-  background: #2c5282;
+  background: #f1f5f9;
 }
 
 .sidebar :deep(.n-menu-item-content--selected) {
-  background: #2c5282;
+  background: #e0ecff;
 }
 
 .sidebar :deep(.n-menu-item-content--selected::before) {
-  background: #3182ce;
+  background: #2563eb;
 }
 
 .sidebar .logo {
-  background: #1a365d;
-  color: #fff;
-  border-bottom: 1px solid #2c5282;
+  background: #ffffff;
+  color: #0f172a;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 16px;
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
 }
 
 #app-container > .main-content {
@@ -246,27 +288,43 @@ body, html {
   align-items: center;
 }
 
-.sidebar .logo {
-  padding: 16px;
-  font-size: 18px;
-  font-weight: bold;
-  text-align: center;
-  border-bottom: 1px solid #eee;
-}
-
 .header {
   height: 60px;
-  background: #2c5282;
-  border-bottom: 1px solid #1a365d;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   padding: 0 24px;
   flex-shrink: 0;
 }
 
+.collapse-trigger {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.collapse-trigger:hover {
+  background: #eef2ff;
+  color: #1d4ed8;
+}
+
+.collapse-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+
 .header .username {
-  color: #e2e8f0;
+  color: #334155;
 }
 
 .user-info {
@@ -274,7 +332,7 @@ body, html {
 }
 
 .username {
-  color: #333;
+  color: #334155;
 }
 
 .content {
