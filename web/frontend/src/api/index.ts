@@ -11,7 +11,7 @@ export const articleApi = {
 }
 
 export const categoryApi = {
-  list: () => api.get('/categories')
+	list: (params?: any) => api.get('/categories', { params })
 }
 
 export const directoryApi = {
@@ -19,5 +19,5 @@ export const directoryApi = {
 }
 
 export const tagsApi = {
-  list: () => api.get('/tags')
+	list: (params?: any) => api.get('/tags', { params })
 }

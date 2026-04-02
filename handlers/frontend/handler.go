@@ -19,6 +19,46 @@ func NewFrontendHandler() *FrontendHandler {
 	}
 }
 
+func (h *FrontendHandler) ListArticles(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	cid := c.DefaultQuery("cid", "")
+	did := c.DefaultQuery("did", "")
+	tid := c.DefaultQuery("tid", "")
+
+	articles, total := h.articleService.ListPublished(page, pageSize, cid, did, tid)
+
+	type ArticleWithTags struct {
+		models.Article
+		Tags []models.Tags `json:"tags"`
+	}
+
+	result := make([]ArticleWithTags, len(articles))
+	for i, article := range articles {
+		result[i].Article = article
+		var articleTags []models.ArticleTags
+		models.DB.Where("aid = ?", article.ID).Find(&articleTags)
+		var tagIds []int
+		for _, at := range articleTags {
+			tagIds = append(tagIds, at.Tid)
+		}
+		if len(tagIds) > 0 {
+			var tags []models.Tags
+			models.DB.Where("id IN ?", tagIds).Find(&tags)
+			result[i].Tags = tags
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"code":    0,
+		"message": "success",
+		"data": gin.H{
+			"list":  result,
+			"total": total,
+		},
+	})
+}
+
 func (h *FrontendHandler) GetArticle(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	article := h.articleService.GetByID(id)

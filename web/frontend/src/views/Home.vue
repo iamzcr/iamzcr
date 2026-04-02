@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { NEmpty, NTag, NSpin, NPagination } from 'naive-ui'
 import { articleApi, categoryApi, directoryApi, tagsApi } from '../api'
@@ -8,7 +8,6 @@ const router = useRouter()
 const route = useRoute()
 
 const articles = ref<any[]>([])
-const filteredArticles = ref<any[]>([])
 const latestArticles = ref<any[]>([])
 const categories = ref<any[]>([])
 const directories = ref<any[]>([])
@@ -19,60 +18,42 @@ const currentType = ref('')
 const currentId = ref(0)
 const page = ref(1)
 const pageSize = ref(10)
-
-const totalArticles = computed(() => filteredArticles.value.length)
-
-const paginatedArticles = computed(() => {
-  const start = (page.value - 1) * pageSize.value
-  return filteredArticles.value.slice(start, start + pageSize.value)
-})
+const totalArticles = ref(0)
 
 async function loadData() {
   loading.value = true
   try {
-    const [articleRes, catRes, dirRes, tagRes] = await Promise.all([
-      articleApi.list({ page: 1, page_size: 100 }),
-      categoryApi.list(),
-      directoryApi.list(),
-      tagsApi.list()
+    updateCurrentFilter()
+
+    const articleParams: any = { page: page.value, page_size: pageSize.value }
+    if (currentType.value === 'category' && currentId.value) articleParams.cid = currentId.value
+    if (currentType.value === 'directory' && currentId.value) articleParams.did = currentId.value
+    if (currentType.value === 'tag' && currentId.value) articleParams.tid = currentId.value
+
+    const [articleRes, latestRes, catRes, dirRes, tagRes] = await Promise.all([
+      articleApi.list(articleParams),
+      articleApi.list({ page: 1, page_size: 5 }),
+      categoryApi.list({ page: 1, page_size: 1000 }),
+      directoryApi.list({ page: 1, page_size: 1000 }),
+      tagsApi.list({ page: 1, page_size: 1000 })
     ])
-    articles.value = articleRes.data.data.list
-    latestArticles.value = articles.value.slice(0, 5)
-    categories.value = catRes.data.data
-    directories.value = dirRes.data.data
-    allTags.value = tagRes.data.data
-    
-    filterArticles()
+
+    articles.value = articleRes.data.data.list || []
+    totalArticles.value = articleRes.data.data.total || 0
+    latestArticles.value = latestRes.data.data.list || []
+    categories.value = catRes.data.data.list || catRes.data.data || []
+    directories.value = dirRes.data.data.list || dirRes.data.data || []
+    allTags.value = tagRes.data.data.list || tagRes.data.data || []
   } finally {
     loading.value = false
   }
 }
 
-function filterArticles() {
+function updateCurrentFilter() {
   currentType.value = route.name === 'category' ? 'category' : 
                      route.name === 'tag' ? 'tag' :
                      route.name === 'directory' ? 'directory' : ''
   currentId.value = Number(route.params.id) || 0
-  
-  if (!currentId.value) {
-    filteredArticles.value = articles.value
-    return
-  }
-  
-  if (currentType.value === 'category') {
-    filteredArticles.value = articles.value.filter((a: any) => a.cid === currentId.value)
-  } else if (currentType.value === 'directory') {
-    filteredArticles.value = articles.value.filter((a: any) => a.did === currentId.value)
-  } else if (currentType.value === 'tag') {
-    filteredArticles.value = articles.value.filter((a: any) => {
-      const tagIds = a.tags?.map((t: any) => t.id) || []
-      return tagIds.includes(currentId.value)
-    })
-  } else {
-    filteredArticles.value = articles.value
-  }
-  
-  page.value = 1
 }
 
 function getCategoryName(cid: number) {
@@ -106,8 +87,15 @@ function goToTag(id: number) {
   router.push(`/tag/${id}`)
 }
 
-watch(() => route.params.id, filterArticles)
-watch(() => route.name, filterArticles)
+watch(() => route.params.id, () => {
+  page.value = 1
+  loadData()
+})
+
+watch(() => route.name, () => {
+  page.value = 1
+  loadData()
+})
 
 onMounted(loadData)
 </script>
@@ -117,10 +105,10 @@ onMounted(loadData)
     <n-spin :show="loading">
       <div class="layout">
         <main class="main-content">
-          <n-empty v-if="!loading && filteredArticles.length === 0" description="暂无文章" />
+          <n-empty v-if="!loading && articles.length === 0" description="暂无文章" />
           <div class="articles-list">
             <div 
-              v-for="article in paginatedArticles" 
+              v-for="article in articles" 
               :key="article.id" 
               class="article-card"
               @click="goToArticle(article.id)"
@@ -156,14 +144,14 @@ onMounted(loadData)
             </div>
           </div>
           
-          <div class="pagination-wrapper" v-if="totalArticles > pageSize">
-            <n-pagination 
-              v-model:page="page" 
-              :page-size="pageSize" 
-              :total="totalArticles"
-              @update:page="(p: number) => page = p"
-            />
-          </div>
+            <div class="pagination-wrapper" v-if="totalArticles > pageSize">
+              <n-pagination 
+                v-model:page="page" 
+                :page-size="pageSize" 
+                :item-count="totalArticles"
+                @update:page="(p: number) => { page = p; loadData() }"
+              />
+            </div>
         </main>
 
         <aside class="sidebar">
@@ -207,9 +195,7 @@ onMounted(loadData)
                 @click="goToCategory(cat.id)"
               >
                 <span class="category-name">{{ cat.name }}</span>
-                <span class="category-count">
-                  {{ articles.filter(a => a.cid === cat.id).length }}
-                </span>
+                <span class="category-count">></span>
               </div>
             </div>
           </div>

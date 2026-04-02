@@ -178,7 +178,7 @@ watch(
 <template>
   <n-message-provider>
     <div id="app-container">
-      <div class="sidebar" v-if="!isLoginPage">
+      <div class="sidebar" :class="{ collapsed }" v-if="!isLoginPage">
         <div class="logo">{{ collapsed ? 'B' : 'Blog Admin' }}</div>
         <n-menu
           :collapsed="collapsed"
@@ -239,6 +239,11 @@ body, html {
   border-right: 1px solid #e2e8f0;
   overflow-y: auto;
   flex-shrink: 0;
+  transition: width 0.2s ease, box-shadow 0.2s ease;
+}
+
+#app-container > .sidebar.collapsed {
+  width: 64px;
 }
 
 .sidebar :deep(.n-menu) {
@@ -272,6 +277,14 @@ body, html {
   font-size: 18px;
   font-weight: bold;
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: padding 0.2s ease, font-size 0.2s ease;
+}
+
+.sidebar.collapsed .logo {
+  padding: 16px 0;
+  font-size: 16px;
 }
 
 #app-container > .main-content {

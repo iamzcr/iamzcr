@@ -98,6 +98,7 @@ onMounted(() => {
 <template>
   <n-card>
     <n-form :model="form" label-placement="top" class="form-container">
+      <div class="form-meta">
       <n-form-item label="标题" path="title">
         <n-input v-model:value="form.title" placeholder="请输入标题" />
       </n-form-item>
@@ -171,11 +172,12 @@ onMounted(() => {
           </n-form-item>
         </n-space>
       </n-form-item>
+      </div>
       
-      <n-form-item label="内容" path="content">
-        <n-tabs v-model:value="activeTab" type="line">
+      <n-form-item label="内容" path="content" class="content-form-item">
+        <n-tabs v-model:value="activeTab" type="line" class="content-tabs">
           <n-tab-pane name="write" tab="编辑">
-            <n-input v-model:value="form.content" type="textarea" :rows="20" placeholder="请输入Markdown内容" style="text-align: left;" />
+            <n-input v-model:value="form.content" type="textarea" :rows="28" placeholder="请输入Markdown内容" class="editor-input" style="text-align: left;" />
           </n-tab-pane>
           <n-tab-pane name="preview" tab="预览">
             <div class="markdown-preview" v-html="renderedContent"></div>
@@ -183,7 +185,7 @@ onMounted(() => {
           <n-tab-pane name="split" tab="分屏">
             <div class="split-view">
               <div class="split-editor">
-                <n-input v-model:value="form.content" type="textarea" :rows="20" placeholder="请输入Markdown内容" />
+                <n-input v-model:value="form.content" type="textarea" :rows="28" placeholder="请输入Markdown内容" class="editor-input" />
               </div>
               <div class="split-preview">
                 <div class="markdown-preview" v-html="renderedContent"></div>
@@ -207,11 +209,40 @@ onMounted(() => {
 .form-container {
   max-width: 800px;
 }
+
+.form-meta {
+  max-width: 800px;
+}
+
+.content-form-item {
+  width: 100%;
+}
+
+.content-form-item :deep(.n-form-item-blank) {
+  display: block;
+  width: 100%;
+}
+
+.content-tabs {
+  width: min(1400px, calc(100vw - 360px));
+}
+
+.editor-input :deep(.n-input-wrapper) {
+  min-height: 68vh;
+}
+
+.editor-input :deep(.n-input__textarea-el) {
+  min-height: 68vh !important;
+  line-height: 1.7;
+  font-family: Consolas, 'Courier New', monospace;
+}
+
 .split-view {
   display: flex;
   gap: 16px;
-  height: 500px;
+  min-height: 68vh;
 }
+
 .split-editor {
   flex: 1;
   min-width: 0;
@@ -224,10 +255,11 @@ onMounted(() => {
   min-width: 0;
   overflow: auto;
 }
+
 .markdown-preview {
   padding: 16px;
   border: 1px solid #eee;
-  min-height: 400px;
+  min-height: 68vh;
   background: #fafafa;
   text-align: left;
 }

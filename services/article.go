@@ -24,6 +24,33 @@ func (s *ArticleService) List(page, pageSize int) ([]models.Article, int64) {
 	return articles, total
 }
 
+func (s *ArticleService) ListPublished(page, pageSize int, cid, did, tid string) ([]models.Article, int64) {
+	var articles []models.Article
+	var total int64
+
+	query := models.DB.Model(&models.Article{}).Where("status = ?", 1)
+	if cid != "" {
+		query = query.Where("cid = ?", cid)
+	}
+	if did != "" {
+		query = query.Where("did = ?", did)
+	}
+	if tid != "" {
+		var articleIDs []int
+		models.DB.Model(&models.ArticleTags{}).Where("tid = ?", tid).Pluck("aid", &articleIDs)
+		if len(articleIDs) == 0 {
+			return []models.Article{}, 0
+		}
+		query = query.Where("id IN ?", articleIDs)
+	}
+
+	query.Count(&total)
+	offset := (page - 1) * pageSize
+	query.Offset(offset).Limit(pageSize).Order("create_time DESC").Find(&articles)
+
+	return articles, total
+}
+
 func (s *ArticleService) Get(id int) *models.Article {
 	var article models.Article
 	if err := models.DB.First(&article, id).Error; err != nil {
