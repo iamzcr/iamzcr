@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"iamzcr/models"
 	"time"
 )
@@ -59,10 +60,27 @@ func (s *ArticleService) Get(id int) *models.Article {
 	return &article
 }
 
+func toInt(v interface{}) int {
+	switch val := v.(type) {
+	case float64:
+		return int(val)
+	case int:
+		return val
+	case int64:
+		return int(val)
+	case string:
+		var i int
+		fmt.Sscanf(val, "%d", &i)
+		return i
+	default:
+		return 0
+	}
+}
+
 func (s *ArticleService) Create(data map[string]interface{}) *models.Article {
 	article := models.Article{
-		Cid:        data["cid"].(int),
-		Did:        data["did"].(int),
+		Cid:        toInt(data["cid"]),
+		Did:        toInt(data["did"]),
 		Title:      data["title"].(string),
 		Desc:       data["desc"].(string),
 		Keyword:    data["keyword"].(string),
@@ -70,17 +88,16 @@ func (s *ArticleService) Create(data map[string]interface{}) *models.Article {
 		Thumb:      data["thumb"].(string),
 		Summary:    data["summary"].(string),
 		Content:    data["content"].(string),
-		IsHot:      data["is_hot"].(int),
-		IsNew:      data["is_new"].(int),
-		IsRecom:    data["is_recom"].(int),
-		Weight:     data["weight"].(int),
-		PublicTime: data["public_time"].(int),
-		Status:     data["status"].(int),
+		IsHot:      toInt(data["is_hot"]),
+		IsNew:      toInt(data["is_new"]),
+		IsRecom:    toInt(data["is_recom"]),
+		Weight:     toInt(data["weight"]),
+		PublicTime: toInt(data["public_time"]),
+		Status:     toInt(data["status"]),
 		Month:      data["month"].(string),
 		CreateTime: int(time.Now().Unix()),
 		UpdateTime: int(time.Now().Unix()),
 	}
-
 	models.DB.Create(&article)
 	return &article
 }
@@ -91,11 +108,11 @@ func (s *ArticleService) Update(id int, data map[string]interface{}) *models.Art
 		return nil
 	}
 
-	if v, ok := data["cid"].(int); ok {
-		article.Cid = v
+	if v, ok := data["cid"]; ok {
+		article.Cid = toInt(v)
 	}
-	if v, ok := data["did"].(int); ok {
-		article.Did = v
+	if v, ok := data["did"]; ok {
+		article.Did = toInt(v)
 	}
 	if v, ok := data["title"].(string); ok {
 		article.Title = v
@@ -118,23 +135,23 @@ func (s *ArticleService) Update(id int, data map[string]interface{}) *models.Art
 	if v, ok := data["content"].(string); ok {
 		article.Content = v
 	}
-	if v, ok := data["is_hot"].(int); ok {
-		article.IsHot = v
+	if v, ok := data["is_hot"]; ok {
+		article.IsHot = toInt(v)
 	}
-	if v, ok := data["is_new"].(int); ok {
-		article.IsNew = v
+	if v, ok := data["is_new"]; ok {
+		article.IsNew = toInt(v)
 	}
-	if v, ok := data["is_recom"].(int); ok {
-		article.IsRecom = v
+	if v, ok := data["is_recom"]; ok {
+		article.IsRecom = toInt(v)
 	}
-	if v, ok := data["weight"].(int); ok {
-		article.Weight = v
+	if v, ok := data["weight"]; ok {
+		article.Weight = toInt(v)
 	}
-	if v, ok := data["public_time"].(int); ok {
-		article.PublicTime = v
+	if v, ok := data["public_time"]; ok {
+		article.PublicTime = toInt(v)
 	}
-	if v, ok := data["status"].(int); ok {
-		article.Status = v
+	if v, ok := data["status"]; ok {
+		article.Status = toInt(v)
 	}
 	if v, ok := data["month"].(string); ok {
 		article.Month = v

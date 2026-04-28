@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@kangc/v-md-editor": "^2.3.18",
     "@types/markdown-it": "^14.1.2",
     "@vueuse/core": "^14.2.1",
     "@vueuse/integrations": "^14.2.1",

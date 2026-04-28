@@ -2,7 +2,7 @@
 import { ref, onMounted, h } from 'vue'
 import { NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSelect, NTag, NUpload, NImage, NSpace, useMessage } from 'naive-ui'
 import type { UploadFileInfo } from 'naive-ui'
-import { attachApi } from '../api'
+import { attachApi, websiteApi } from '../api'
 
 const message = useMessage()
 const attaches = ref<any[]>([])
@@ -11,6 +11,14 @@ const showModal = ref(false)
 const uploadLoading = ref(false)
 const pagination = ref({ page: 1, pageSize: 10, itemCount: 0 })
 const editingAttach = ref({ id: 0, name: '', link: '', path: '', status: 1, type: 1 })
+const cdnUrl = ref('')
+
+function getFullUrl(path: string) {
+  if (!path) return ''
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  if (!cdnUrl.value) return path
+  return cdnUrl.value.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '')
+}
 
 const typeOptions = [
   { label: '图片', value: 1 },
@@ -39,7 +47,7 @@ const columns = [
   { title: 'ID', key: 'id', width: 60 },
   { title: '预览', key: 'link', width: 80, render: (row: any) => {
     if (row.type === 1 && row.link) {
-      return h(NImage, { width: 48, height: 48, src: row.link, style: { objectFit: 'cover', borderRadius: '4px' } })
+      return h(NImage, { width: 48, height: 48, src: getFullUrl(row.link), style: { objectFit: 'cover', borderRadius: '4px' } })
     }
     return h('span', '-')
   }},
@@ -107,7 +115,17 @@ async function deleteAttach(id: number) {
   loadAttaches()
 }
 
-onMounted(loadAttaches)
+async function initCdn() {
+  try {
+    const res = await websiteApi.get()
+    cdnUrl.value = res.data.data?.cdn_url || ''
+  } catch { /* ignore */ }
+}
+
+onMounted(() => {
+  loadAttaches()
+  initCdn()
+})
 </script>
 
 <template>

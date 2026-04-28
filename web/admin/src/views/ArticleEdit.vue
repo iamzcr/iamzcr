@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { NForm, NFormItem, NInput, NButton, NCard, NTabs, NTabPane, NSwitch, NInputNumber, NSelect, NSpace, NGrid, NGridItem, NModal, NImage } from 'naive-ui'
-import { articleApi, categoryApi, directoryApi, tagsApi, attachApi } from '../api'
-import MarkdownIt from 'markdown-it'
+import { NForm, NFormItem, NInput, NButton, NCard, NSwitch, NInputNumber, NSelect, NSpace, NGrid, NGridItem, NModal, NImage } from 'naive-ui'
+import { articleApi, categoryApi, directoryApi, tagsApi, attachApi, websiteApi } from '../api'
 
 const route = useRoute()
 const router = useRouter()
-const md = new MarkdownIt()
 
 const isEdit = computed(() => !!route.params.id)
 const form = ref({
@@ -30,27 +28,34 @@ const form = ref({
   tag_ids: [] as number[]
 })
 const loading = ref(false)
-const activeTab = ref('write')
 
 const categories = ref<any[]>([])
 const directories = ref<any[]>([])
 const allTags = ref<any[]>([])
 
-const renderedContent = computed(() => md.render(form.value.content))
-
 const showCoverModal = ref(false)
 const coverImages = ref<any[]>([])
 const coverLoading = ref(false)
+const cdnUrl = ref('')
+
+function getFullUrl(path: string) {
+  if (!path) return ''
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  if (!cdnUrl.value) return path
+  return cdnUrl.value.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '')
+}
 
 async function loadData() {
-  const [catRes, dirRes, tagRes] = await Promise.all([
+  const [catRes, dirRes, tagRes, webRes] = await Promise.all([
     categoryApi.list({ page: 1, page_size: 1000 }),
     directoryApi.list({ page: 1, page_size: 1000 }),
-    tagsApi.list({ page: 1, page_size: 1000 })
+    tagsApi.list({ page: 1, page_size: 1000 }),
+    websiteApi.get()
   ])
   categories.value = catRes.data.data.list || catRes.data.data || []
   directories.value = dirRes.data.data.list || dirRes.data.data || []
   allTags.value = tagRes.data.data.list || tagRes.data.data || []
+  cdnUrl.value = webRes.data.data?.cdn_url || ''
 }
 
 async function loadArticle() {
@@ -170,37 +175,37 @@ onMounted(() => {
           <n-button v-if="form.thumb" @click="clearCover" secondary>清除</n-button>
         </div>
         <div v-if="form.thumb" style="margin-top: 8px;">
-          <n-image width="200" :src="form.thumb" style="border-radius: 4px; border: 1px solid #eee;" />
+          <n-image width="200" :src="getFullUrl(form.thumb)" style="border-radius: 4px; border: 1px solid #eee;" />
         </div>
       </n-form-item>
       
       <n-form-item label="属性">
         <n-space>
-          <n-form-item label="热门" path="is_hot" label-placement="left" :show-label="false">
+          <n-form-item label="热门" path="is_hot" label-placement="left">
             <n-switch v-model:value="form.is_hot" :checked-value="1" :unchecked-value="0">
               <template #checked>是</template>
               <template #unchecked>否</template>
             </n-switch>
           </n-form-item>
-          <n-form-item label="最新" path="is_new" label-placement="left" :show-label="false">
+          <n-form-item label="最新" path="is_new" label-placement="left">
             <n-switch v-model:value="form.is_new" :checked-value="1" :unchecked-value="0">
               <template #checked>是</template>
               <template #unchecked>否</template>
             </n-switch>
           </n-form-item>
-          <n-form-item label="推荐" path="is_recom" label-placement="left" :show-label="false">
+          <n-form-item label="推荐" path="is_recom" label-placement="left">
             <n-switch v-model:value="form.is_recom" :checked-value="1" :unchecked-value="0">
               <template #checked>是</template>
               <template #unchecked>否</template>
             </n-switch>
           </n-form-item>
-          <n-form-item label="状态" path="status" label-placement="left" :show-label="false">
+          <n-form-item label="状态" path="status" label-placement="left">
             <n-switch v-model:value="form.status" :checked-value="1" :unchecked-value="0">
               <template #checked>已发布</template>
               <template #unchecked>草稿</template>
             </n-switch>
           </n-form-item>
-          <n-form-item label="权重" path="weight" label-placement="left" :show-label="false">
+          <n-form-item label="权重" path="weight" label-placement="left">
             <n-input-number v-model:value="form.weight" :min="0" :show-button="false" placeholder="权重" style="width: 80px" />
           </n-form-item>
         </n-space>
@@ -208,24 +213,7 @@ onMounted(() => {
       </div>
       
       <n-form-item label="内容" path="content" class="content-form-item">
-        <n-tabs v-model:value="activeTab" type="line" class="content-tabs">
-          <n-tab-pane name="write" tab="编辑">
-            <n-input v-model:value="form.content" type="textarea" :rows="28" placeholder="请输入Markdown内容" class="editor-input" style="text-align: left;" />
-          </n-tab-pane>
-          <n-tab-pane name="preview" tab="预览">
-            <div class="markdown-preview" v-html="renderedContent"></div>
-          </n-tab-pane>
-          <n-tab-pane name="split" tab="分屏">
-            <div class="split-view">
-              <div class="split-editor">
-                <n-input v-model:value="form.content" type="textarea" :rows="28" placeholder="请输入Markdown内容" class="editor-input" />
-              </div>
-              <div class="split-preview">
-                <div class="markdown-preview" v-html="renderedContent"></div>
-              </div>
-            </div>
-          </n-tab-pane>
-        </n-tabs>
+        <v-md-editor v-model="form.content" height="68vh"></v-md-editor>
       </n-form-item>
       
       <n-form-item>
@@ -245,7 +233,7 @@ onMounted(() => {
           :style="{ borderColor: form.thumb === img.link ? '#2080f0' : 'transparent' }"
           @click="selectCover(img)"
         >
-          <n-image width="150" height="150" :src="img.link" style="object-fit: cover; border-radius: 4px;" />
+          <n-image width="150" height="150" :src="getFullUrl(img.link)" style="object-fit: cover; border-radius: 4px;" />
           <div style="font-size: 12px; text-align: center; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ img.name }}</div>
         </div>
         <div v-if="coverImages.length === 0 && !coverLoading" style="padding: 24px; color: #999; text-align: center; width: 100%;">
@@ -273,51 +261,4 @@ onMounted(() => {
   display: block;
   width: 100%;
 }
-
-.content-tabs {
-  width: min(1400px, calc(100vw - 360px));
-}
-
-.editor-input :deep(.n-input-wrapper) {
-  min-height: 68vh;
-}
-
-.editor-input :deep(.n-input__textarea-el) {
-  min-height: 68vh !important;
-  line-height: 1.7;
-  font-family: Consolas, 'Courier New', monospace;
-}
-
-.split-view {
-  display: flex;
-  gap: 16px;
-  min-height: 68vh;
-}
-
-.split-editor {
-  flex: 1;
-  min-width: 0;
-}
-.split-editor :deep(.n-input__textarea-el) {
-  text-align: left;
-}
-.split-preview {
-  flex: 1;
-  min-width: 0;
-  overflow: auto;
-}
-
-.markdown-preview {
-  padding: 16px;
-  border: 1px solid #eee;
-  min-height: 68vh;
-  background: #fafafa;
-  text-align: left;
-}
-.markdown-preview :deep(h1) { font-size: 2em; border-bottom: 1px solid #eee; padding-bottom: 0.3em; }
-.markdown-preview :deep(h2) { font-size: 1.5em; border-bottom: 1px solid #eee; padding-bottom: 0.3em; }
-.markdown-preview :deep(pre) { background: #f6f8fa; padding: 16px; border-radius: 6px; overflow-x: auto; }
-.markdown-preview :deep(code) { background: #f6f8fa; padding: 2px 6px; border-radius: 3px; }
-.markdown-preview :deep(blockquote) { border-left: 4px solid #ddd; padding-left: 16px; color: #666; }
-.markdown-preview :deep(img) { max-width: 100; }
 </style>
