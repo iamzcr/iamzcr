@@ -179,35 +179,30 @@ onMounted(() => {
         </div>
       </n-form-item>
       
-      <n-form-item label="属性">
-        <n-space>
-          <n-form-item label="热门" path="is_hot" label-placement="left">
-            <n-switch v-model:value="form.is_hot" :checked-value="1" :unchecked-value="0">
-              <template #checked>是</template>
-              <template #unchecked>否</template>
-            </n-switch>
-          </n-form-item>
-          <n-form-item label="最新" path="is_new" label-placement="left">
-            <n-switch v-model:value="form.is_new" :checked-value="1" :unchecked-value="0">
-              <template #checked>是</template>
-              <template #unchecked>否</template>
-            </n-switch>
-          </n-form-item>
-          <n-form-item label="推荐" path="is_recom" label-placement="left">
-            <n-switch v-model:value="form.is_recom" :checked-value="1" :unchecked-value="0">
-              <template #checked>是</template>
-              <template #unchecked>否</template>
-            </n-switch>
-          </n-form-item>
-          <n-form-item label="状态" path="status" label-placement="left">
-            <n-switch v-model:value="form.status" :checked-value="1" :unchecked-value="0">
-              <template #checked>已发布</template>
-              <template #unchecked>草稿</template>
-            </n-switch>
-          </n-form-item>
-          <n-form-item label="权重" path="weight" label-placement="left">
-            <n-input-number v-model:value="form.weight" :min="0" :show-button="false" placeholder="权重" style="width: 80px" />
-          </n-form-item>
+      <n-form-item>
+        <n-space align="center">
+          <span class="prop-label">热门</span>
+          <n-switch v-model:value="form.is_hot" :checked-value="1" :unchecked-value="0">
+            <template #checked>是</template>
+            <template #unchecked>否</template>
+          </n-switch>
+          <span class="prop-label">最新</span>
+          <n-switch v-model:value="form.is_new" :checked-value="1" :unchecked-value="0">
+            <template #checked>是</template>
+            <template #unchecked>否</template>
+          </n-switch>
+          <span class="prop-label">推荐</span>
+          <n-switch v-model:value="form.is_recom" :checked-value="1" :unchecked-value="0">
+            <template #checked>是</template>
+            <template #unchecked>否</template>
+          </n-switch>
+          <span class="prop-label">状态</span>
+          <n-switch v-model:value="form.status" :checked-value="1" :unchecked-value="0">
+            <template #checked>已发布</template>
+            <template #unchecked>草稿</template>
+          </n-switch>
+          <span class="prop-label">权重</span>
+          <n-input-number v-model:value="form.weight" :min="0" :show-button="false" placeholder="权重" style="width: 80px" />
         </n-space>
       </n-form-item>
       </div>
@@ -246,11 +241,20 @@ onMounted(() => {
 
 <style scoped>
 .form-container {
-  max-width: 800px;
+  width: 100%;
 }
 
 .form-meta {
   max-width: 800px;
+}
+
+.prop-label {
+  font-size: 13px;
+  color: #666;
+  margin-left: 8px;
+}
+.prop-label:first-child {
+  margin-left: 0;
 }
 
 .content-form-item {
