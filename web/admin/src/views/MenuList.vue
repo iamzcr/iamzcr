@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
-import { NDataTable, NButton, NModal, NForm, NFormItem, NInput, NInputNumber } from 'naive-ui'
+import { NDataTable, NButton, NModal, NForm, NFormItem, NInput, NInputNumber, NSpace, useMessage } from 'naive-ui'
 import { menuApi } from '../api'
 
 const menus = ref<any[]>([])
@@ -8,6 +8,7 @@ const loading = ref(false)
 const showModal = ref(false)
 const pagination = ref({ page: 1, pageSize: 10, itemCount: 0 })
 const editingMenu = ref({ id: 0, type: 0, mark: '', author: '', name: '', url: '', parent: 0, icon: '', weight: 0, status: 1 })
+const message = useMessage()
 
 const columns = [
   { title: 'ID', key: 'id', width: 60 },
@@ -15,7 +16,7 @@ const columns = [
   { title: '链接', key: 'url', ellipsis: { tooltip: true } },
   { title: '类型', key: 'type', width: 60 },
   { title: '权重', key: 'weight', width: 60 },
-  { title: '操作', key: 'actions', width: 100, render: (row: any) => h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑') }
+  { title: '操作', key: 'actions', width: 150, render: (row: any) => h(NSpace, () => [h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑'), h(NButton, { size: 'small', type: 'error', onClick: () => deleteMenu(row.id) }, () => '删除')]) }
 ]
 
 async function loadMenus() {
@@ -41,6 +42,12 @@ async function saveMenu() {
     await menuApi.create(editingMenu.value)
   }
   showModal.value = false
+  loadMenus()
+}
+
+async function deleteMenu(id: number) {
+  await menuApi.delete(id)
+  message.success('删除成功')
   loadMenus()
 }
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
-import { NDataTable, NButton, NModal, NForm, NFormItem, NInput, NInputNumber, NSelect } from 'naive-ui'
+import { NDataTable, NButton, NModal, NForm, NFormItem, NInput, NInputNumber, NSelect, NSpace, useMessage } from 'naive-ui'
 import { permitApi } from '../api'
 
 const permits = ref<any[]>([])
@@ -8,6 +8,7 @@ const loading = ref(false)
 const showModal = ref(false)
 const pagination = ref({ page: 1, pageSize: 10, itemCount: 0 })
 const editingPermit = ref({ id: 0, type: 1, mark: '', parent: 0, name: '', modules: '', author: '', status: 1, weight: 0 })
+const message = useMessage()
 
 function formatDate(time: number | string) {
   if (!time) return '-'
@@ -30,7 +31,7 @@ const columns = [
   { title: '权重', key: 'weight', width: 80 },
   { title: '状态', key: 'status', width: 80, render: (row: any) => h('span', row.status === 1 ? '启用' : '禁用') },
   { title: '创建时间', key: 'create_time', width: 180, render: (row: any) => formatDate(row.create_time) },
-  { title: '操作', key: 'actions', width: 120, render: (row: any) => h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑') }
+  { title: '操作', key: 'actions', width: 150, render: (row: any) => h(NSpace, () => [h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑'), h(NButton, { size: 'small', type: 'error', onClick: () => deletePermit(row.id) }, () => '删除')]) }
 ]
 
 async function loadPermits() {
@@ -56,6 +57,12 @@ async function savePermit() {
     await permitApi.create(editingPermit.value)
   }
   showModal.value = false
+  loadPermits()
+}
+
+async function deletePermit(id: number) {
+  await permitApi.delete(id)
+  message.success('删除成功')
   loadPermits()
 }
 

@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
-import { NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSelect, NTag } from 'naive-ui'
+import { NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSelect, NTag, NUpload, NImage, NSpace, useMessage } from 'naive-ui'
+import type { UploadFileInfo } from 'naive-ui'
 import { attachApi } from '../api'
 
+const message = useMessage()
 const attaches = ref<any[]>([])
 const loading = ref(false)
 const showModal = ref(false)
+const uploadLoading = ref(false)
 const pagination = ref({ page: 1, pageSize: 10, itemCount: 0 })
 const editingAttach = ref({ id: 0, name: '', link: '', path: '', status: 1, type: 1 })
 
@@ -34,13 +37,21 @@ function formatDate(time: number | string) {
 
 const columns = [
   { title: 'ID', key: 'id', width: 60 },
-  { title: '名称', key: 'name' },
+  { title: '预览', key: 'link', width: 80, render: (row: any) => {
+    if (row.type === 1 && row.link) {
+      return h(NImage, { width: 48, height: 48, src: row.link, style: { objectFit: 'cover', borderRadius: '4px' } })
+    }
+    return h('span', '-')
+  }},
+  { title: '名称', key: 'name', ellipsis: { tooltip: true } },
   { title: '链接', key: 'link', ellipsis: { tooltip: true } },
-  { title: '路径', key: 'path', ellipsis: { tooltip: true } },
   { title: '类型', key: 'type', width: 80, render: (row: any) => h(NTag, { type: row.type === 1 ? 'warning' : 'info', size: 'small' }, () => row.type === 1 ? '图片' : '视频') },
   { title: '状态', key: 'status', width: 80, render: (row: any) => h(NTag, { type: row.status === 1 ? 'success' : 'error', size: 'small' }, () => row.status === 1 ? '启用' : '禁用') },
   { title: '创建时间', key: 'create_time', width: 180, render: (row: any) => formatDate(row.create_time) },
-  { title: '操作', key: 'actions', width: 120, render: (row: any) => h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑') }
+  { title: '操作', key: 'actions', width: 150, render: (row: any) => h(NSpace, () => [
+    h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑'),
+    h(NButton, { size: 'small', type: 'error', onClick: () => deleteAttach(row.id) }, () => '删除')
+  ])}
 ]
 
 async function loadAttaches() {
@@ -51,6 +62,27 @@ async function loadAttaches() {
     pagination.value.itemCount = res.data.data.total || 0
   } finally {
     loading.value = false
+  }
+}
+
+async function handleUpload(options: { file: UploadFileInfo; onFinish: () => void; onError: () => void }) {
+  uploadLoading.value = true
+  try {
+    const rawFile = options.file.file
+    if (!rawFile) {
+      message.error('文件无效')
+      options.onError()
+      return
+    }
+    await attachApi.upload(rawFile)
+    message.success('上传成功')
+    options.onFinish()
+    loadAttaches()
+  } catch (e: any) {
+    message.error(e.response?.data?.msg || '上传失败')
+    options.onError()
+  } finally {
+    uploadLoading.value = false
   }
 }
 
@@ -69,13 +101,25 @@ async function saveAttach() {
   loadAttaches()
 }
 
+async function deleteAttach(id: number) {
+  await attachApi.delete(id)
+  message.success('删除成功')
+  loadAttaches()
+}
+
 onMounted(loadAttaches)
 </script>
 
 <template>
   <div>
-    <div style="margin-bottom: 16px; display: flex; justify-content: flex-end;">
-      <n-button type="primary" @click="openEdit()">新建附件</n-button>
+    <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+      <n-upload
+        accept="image/*"
+        :show-file-list="false"
+        :custom-request="handleUpload"
+      >
+        <n-button type="primary" :loading="uploadLoading">上传图片</n-button>
+      </n-upload>
     </div>
     <n-data-table :columns="columns" :data="attaches" :loading="loading" remote :pagination="pagination" @update:page="pagination.page = $event; loadAttaches()" />
     <n-modal v-model:show="showModal" preset="card" title="附件管理" style="width: 500px">

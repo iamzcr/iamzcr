@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { NDataTable } from 'naive-ui'
+import { ref, onMounted, h } from 'vue'
+import { NDataTable, NButton, useMessage } from 'naive-ui'
 import { logApi } from '../api'
 
 const logs = ref<any[]>([])
 const loading = ref(false)
 const pagination = ref({ page: 1, pageSize: 10, itemCount: 0 })
+const message = useMessage()
 
 function formatDate(time: number | string) {
   if (!time) return '-'
@@ -26,7 +27,8 @@ const columns = [
   { title: 'IP', key: 'ip', width: 140 },
   { title: '内容', key: 'content', ellipsis: { tooltip: true } },
   { title: '类型', key: 'type', width: 80 },
-  { title: '时间', key: 'create_time', width: 180, render: (row: any) => formatDate(row.create_time) }
+  { title: '时间', key: 'create_time', width: 180, render: (row: any) => formatDate(row.create_time) },
+  { title: '操作', key: 'actions', width: 120, render: (row: any) => h(NButton, { size: 'small', type: 'error', onClick: () => deleteLog(row.id) }, () => '删除') }
 ]
 
 async function loadLogs() {
@@ -38,6 +40,12 @@ async function loadLogs() {
   } finally {
     loading.value = false
   }
+}
+
+async function deleteLog(id: number) {
+  await logApi.delete(id)
+  message.success('删除成功')
+  loadLogs()
 }
 
 onMounted(loadLogs)

@@ -80,8 +80,10 @@ export const directoryApi = {
 }
 
 export const websiteApi = {
+  list: () => api.get('/website/list'),
   get: () => api.get('/website'),
-  update: (data: any) => api.put('/website', data)
+  update: (data: any) => api.put('/website', data),
+  delete: (id: number) => api.delete(`/website/${id}`)
 }
 
 export const attachApi = {
@@ -89,7 +91,12 @@ export const attachApi = {
   get: (id: number) => api.get(`/attaches/${id}`),
   create: (data: any) => api.post('/attaches', data),
   update: (id: number, data: any) => api.put(`/attaches/${id}`, data),
-  delete: (id: number) => api.delete(`/attaches/${id}`)
+  delete: (id: number) => api.delete(`/attaches/${id}`),
+  upload: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post('/upload', formData)
+  }
 }
 
 export const langApi = {
@@ -136,7 +143,8 @@ export const adminApi = {
   create: (data: any) => api.post('/admins', data),
   update: (id: number, data: any) => api.put(`/admins/${id}`, data),
   delete: (id: number) => api.delete(`/admins/${id}`),
-  changePassword: (data: any) => api.post('/admin/password', data)
+  changePassword: (data: any) => api.post('/admin/password', data),
+  changeAdminPassword: (id: number, data: any) => api.post(`/admins/${id}/password`, data)
 }
 
 export const adminGroupApi = {

@@ -30,6 +30,8 @@ func main() {
 		api.GET("/website", frontendHandler.GetWebsite)
 	}
 
+	r.Static("/asset", cfg.AssetDir())
+
 	log.Printf("Frontend API server starting on port %s...", cfg.FrontendPort)
 	r.Run(":" + cfg.FrontendPort)
 }

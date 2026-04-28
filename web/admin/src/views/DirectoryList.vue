@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, h, computed } from 'vue'
-import { NDataTable, NButton, NModal, NForm, NFormItem, NInput, NInputNumber, NSelect } from 'naive-ui'
+import { NDataTable, NButton, NModal, NForm, NFormItem, NInput, NInputNumber, NSelect, NSpace, useMessage } from 'naive-ui'
 import { directoryApi, categoryApi } from '../api'
 
 const directories = ref<any[]>([])
@@ -9,6 +9,7 @@ const loading = ref(false)
 const showModal = ref(false)
 const pagination = ref({ page: 1, pageSize: 10, itemCount: 0 })
 const editingDirectory = ref({ id: 0, cid: null as number | null, type: '', parent: '', mark: '', author: '', name: '', weight: 0, status: 1 })
+const message = useMessage()
 
 const categoryMap = computed(() => {
   const map: Record<number, string> = {}
@@ -23,7 +24,10 @@ const columns = [
   { title: '标识', key: 'mark' },
   { title: '类型', key: 'type' },
   { title: '权重', key: 'weight', width: 60 },
-  { title: '操作', key: 'actions', width: 100, render: (row: any) => h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑') }
+  { title: '操作', key: 'actions', width: 150, render: (row: any) => h(NSpace, () => [
+    h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑'),
+    h(NButton, { size: 'small', type: 'error', onClick: () => deleteDirectory(row.id) }, () => '删除')
+  ])}
 ]
 
 async function loadDirectories() {
@@ -56,6 +60,12 @@ async function saveDirectory() {
     await directoryApi.create(data)
   }
   showModal.value = false
+  loadDirectories()
+}
+
+async function deleteDirectory(id: number) {
+  await directoryApi.delete(id)
+  message.success('删除成功')
   loadDirectories()
 }
 

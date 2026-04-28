@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { NDataTable, NInput } from 'naive-ui'
+import { ref, onMounted, h } from 'vue'
+import { NDataTable, NButton, NInput, useMessage } from 'naive-ui'
 import { readApi, articleApi } from '../api'
 
 const reads = ref<any[]>([])
@@ -8,6 +8,7 @@ const loading = ref(false)
 const articleMap = ref<Record<number, string>>({})
 const aid = ref('')
 const pagination = ref({ page: 1, pageSize: 10, itemCount: 0 })
+const message = useMessage()
 
 function formatDate(time: number | string) {
   if (!time) return '-'
@@ -28,7 +29,8 @@ const columns = [
   { title: '文章标题', key: 'title', render: (row: any) => articleMap.value[row.aid] || '未知' },
   { title: '来源', key: 'referer', ellipsis: { tooltip: true } },
   { title: 'IP', key: 'ip', width: 140 },
-  { title: '时间', key: 'create_time', width: 180, render: (row: any) => formatDate(row.create_time) }
+  { title: '时间', key: 'create_time', width: 180, render: (row: any) => formatDate(row.create_time) },
+  { title: '操作', key: 'actions', width: 120, render: (row: any) => h(NButton, { size: 'small', type: 'error', onClick: () => deleteRead(row.id) }, () => '删除') }
 ]
 
 async function loadArticles() {
@@ -50,6 +52,12 @@ async function loadReads() {
   } finally {
     loading.value = false
   }
+}
+
+async function deleteRead(id: number) {
+  await readApi.delete(id)
+  message.success('删除成功')
+  loadReads()
 }
 
 onMounted(() => {

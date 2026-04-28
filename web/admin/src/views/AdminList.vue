@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
-import { NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSelect, NSwitch } from 'naive-ui'
+import { NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSelect, NSwitch, NSpace, useMessage } from 'naive-ui'
 import { adminApi, adminGroupApi } from '../api'
 
+const message = useMessage()
 const admins = ref<any[]>([])
 const groups = ref<any[]>([])
 const loading = ref(false)
 const showModal = ref(false)
+const showPwdModal = ref(false)
+const pwdLoading = ref(false)
 const editingAdmin = ref({ id: 0, username: '', password: '', name: '', group_id: 0, status: 1 })
+const pwdForm = ref({ target_id: 0, target_username: '', new_password: '', confirm_password: '' })
 
 function formatDate(time: number | string) {
   if (!time) return '-'
@@ -33,7 +37,11 @@ const columns = [
   { title: '状态', key: 'status', width: 80, render: (row: any) => h('span', row.status === 1 ? '正常' : '禁用') },
   { title: '登录次数', key: 'login_num', width: 80 },
   { title: '最后登录', key: 'last_login_time', width: 180, render: (row: any) => formatDate(row.last_login_time) },
-  { title: '操作', key: 'actions', width: 120, render: (row: any) => h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑') }
+  { title: '操作', key: 'actions', width: 230, render: (row: any) => h(NSpace, () => [
+    h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑'),
+    h(NButton, { size: 'small', onClick: () => openPwdModal(row) }, () => '修改密码'),
+    h(NButton, { size: 'small', type: 'error', onClick: () => deleteAdmin(row.id) }, () => '删除')
+  ])}
 ]
 
 async function loadAdmins() {
@@ -63,6 +71,45 @@ async function saveAdmin() {
     await adminApi.create(editingAdmin.value)
   }
   showModal.value = false
+  loadAdmins()
+}
+
+function openPwdModal(row: any) {
+  pwdForm.value = { target_id: row.id, target_username: row.username, new_password: '', confirm_password: '' }
+  showPwdModal.value = true
+}
+
+async function changeAdminPassword() {
+  if (!pwdForm.value.new_password) {
+    message.error('请输入新密码')
+    return
+  }
+  if (pwdForm.value.new_password.length < 6) {
+    message.error('密码长度不能少于6位')
+    return
+  }
+  if (pwdForm.value.new_password !== pwdForm.value.confirm_password) {
+    message.error('两次输入的密码不一致')
+    return
+  }
+
+  pwdLoading.value = true
+  try {
+    await adminApi.changeAdminPassword(pwdForm.value.target_id, {
+      new_password: pwdForm.value.new_password
+    })
+    message.success('密码修改成功')
+    showPwdModal.value = false
+  } catch (e: any) {
+    message.error(e.response?.data?.msg || '修改失败')
+  } finally {
+    pwdLoading.value = false
+  }
+}
+
+async function deleteAdmin(id: number) {
+  await adminApi.delete(id)
+  message.success('删除成功')
   loadAdmins()
 }
 
@@ -102,6 +149,24 @@ onMounted(() => {
       <template #footer>
         <n-button @click="showModal = false">取消</n-button>
         <n-button type="primary" @click="saveAdmin">保存</n-button>
+      </template>
+    </n-modal>
+
+    <n-modal v-model:show="showPwdModal" preset="card" title="修改密码" style="width: 400px">
+      <n-form :model="pwdForm">
+        <n-form-item label="用户名">
+          <n-input :value="pwdForm.target_username" disabled />
+        </n-form-item>
+        <n-form-item label="新密码">
+          <n-input v-model:value="pwdForm.new_password" type="password" placeholder="请输入新密码" />
+        </n-form-item>
+        <n-form-item label="确认密码">
+          <n-input v-model:value="pwdForm.confirm_password" type="password" placeholder="请再次输入新密码" />
+        </n-form-item>
+      </n-form>
+      <template #footer>
+        <n-button @click="showPwdModal = false">取消</n-button>
+        <n-button type="primary" @click="changeAdminPassword" :loading="pwdLoading">确认修改</n-button>
       </template>
     </n-modal>
   </div>

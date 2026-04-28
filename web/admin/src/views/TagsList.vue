@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
-import { NDataTable, NButton, NModal, NForm, NFormItem, NInput, NInputNumber, NSwitch, NTag } from 'naive-ui'
+import { NDataTable, NButton, NModal, NForm, NFormItem, NInput, NInputNumber, NSwitch, NSpace, NTag, useMessage } from 'naive-ui'
 import { tagsApi } from '../api'
 
 const tags = ref<any[]>([])
@@ -8,6 +8,7 @@ const loading = ref(false)
 const showModal = ref(false)
 const pagination = ref({ page: 1, pageSize: 10, itemCount: 0 })
 const editingTag = ref({ id: 0, type: '', mark: '', author: '', name: '', weight: 0, status: 1, is_hot: 0 })
+const message = useMessage()
 
 const columns = [
   { title: 'ID', key: 'id', width: 60 },
@@ -16,7 +17,7 @@ const columns = [
   { title: '类型', key: 'type' },
   { title: '权重', key: 'weight', width: 60 },
   { title: '热门', key: 'is_hot', width: 60, render: (row: any) => h(NTag, { type: row.is_hot === 1 ? 'error' : 'default', size: 'small' }, () => row.is_hot === 1 ? '是' : '否') },
-  { title: '操作', key: 'actions', width: 100, render: (row: any) => h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑') }
+  { title: '操作', key: 'actions', width: 150, render: (row: any) => h(NSpace, () => [h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑'), h(NButton, { size: 'small', type: 'error', onClick: () => deleteTag(row.id) }, () => '删除')]) }
 ]
 
 async function loadTags() {
@@ -42,6 +43,12 @@ async function saveTag() {
     await tagsApi.create(editingTag.value)
   }
   showModal.value = false
+  loadTags()
+}
+
+async function deleteTag(id: number) {
+  await tagsApi.delete(id)
+  message.success('删除成功')
   loadTags()
 }
 

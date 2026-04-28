@@ -71,7 +71,9 @@ func main() {
 
 			websiteHandler := admin.NewWebsiteHandler()
 			adminGroup.GET("/website", websiteHandler.Get)
+			adminGroup.GET("/website/list", websiteHandler.List)
 			adminGroup.PUT("/website", websiteHandler.Update)
+			adminGroup.DELETE("/website/:id", websiteHandler.Delete)
 
 			attachHandler := admin.NewAttachHandler()
 			adminGroup.GET("/attaches", attachHandler.List)
@@ -79,6 +81,7 @@ func main() {
 			adminGroup.POST("/attaches", attachHandler.Create)
 			adminGroup.PUT("/attaches/:id", attachHandler.Update)
 			adminGroup.DELETE("/attaches/:id", attachHandler.Delete)
+			adminGroup.POST("/upload", attachHandler.Upload)
 
 			langHandler := admin.NewLangHandler()
 			adminGroup.GET("/langs", langHandler.List)
@@ -118,6 +121,7 @@ func main() {
 			adminGroup.POST("/admins", adminHandler.CreateAdmin)
 			adminGroup.PUT("/admins/:id", adminHandler.UpdateAdmin)
 			adminGroup.DELETE("/admins/:id", adminHandler.DeleteAdmin)
+			adminGroup.POST("/admins/:id/password", adminHandler.ChangeAdminPassword)
 			adminGroup.POST("/admin/password", adminHandler.ChangePassword)
 
 			adminGroupHandler := admin.NewAdminGroupHandler()
@@ -128,6 +132,8 @@ func main() {
 			adminGroup.DELETE("/admin_groups/:id", adminGroupHandler.Delete)
 		}
 	}
+
+	r.Static("/asset", cfg.AssetDir())
 
 	log.Printf("Admin API server starting on port %s...", cfg.AdminPort)
 	r.Run(":" + cfg.AdminPort)

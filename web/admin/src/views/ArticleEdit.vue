@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { NForm, NFormItem, NInput, NButton, NCard, NTabs, NTabPane, NSwitch, NInputNumber, NSelect, NSpace, NGrid, NGridItem } from 'naive-ui'
-import { articleApi, categoryApi, directoryApi, tagsApi } from '../api'
+import { NForm, NFormItem, NInput, NButton, NCard, NTabs, NTabPane, NSwitch, NInputNumber, NSelect, NSpace, NGrid, NGridItem, NModal, NImage } from 'naive-ui'
+import { articleApi, categoryApi, directoryApi, tagsApi, attachApi } from '../api'
 import MarkdownIt from 'markdown-it'
 
 const route = useRoute()
@@ -37,6 +37,10 @@ const directories = ref<any[]>([])
 const allTags = ref<any[]>([])
 
 const renderedContent = computed(() => md.render(form.value.content))
+
+const showCoverModal = ref(false)
+const coverImages = ref<any[]>([])
+const coverLoading = ref(false)
 
 async function loadData() {
   const [catRes, dirRes, tagRes] = await Promise.all([
@@ -73,6 +77,26 @@ async function loadArticle() {
       tag_ids: data.tags ? data.tags.map((t: any) => t.id) : []
     }
   }
+}
+
+async function openCoverModal() {
+  showCoverModal.value = true
+  coverLoading.value = true
+  try {
+    const res = await attachApi.list({ page: 1, page_size: 1000, type: 1 })
+    coverImages.value = res.data.data.list || res.data.data || []
+  } finally {
+    coverLoading.value = false
+  }
+}
+
+function selectCover(img: any) {
+  form.value.thumb = img.link
+  showCoverModal.value = false
+}
+
+function clearCover() {
+  form.value.thumb = ''
 }
 
 async function save() {
@@ -138,7 +162,16 @@ onMounted(() => {
       </n-grid>
       
       <n-form-item label="封面图" path="thumb">
-        <n-input v-model:value="form.thumb" placeholder="请输入封面图URL" />
+        <div style="display: flex; gap: 12px; align-items: flex-end;">
+          <div style="flex: 1;">
+            <n-input v-model:value="form.thumb" placeholder="手动输入URL或点击右侧按钮选择" />
+          </div>
+          <n-button @click="openCoverModal">选择封面</n-button>
+          <n-button v-if="form.thumb" @click="clearCover" secondary>清除</n-button>
+        </div>
+        <div v-if="form.thumb" style="margin-top: 8px;">
+          <n-image width="200" :src="form.thumb" style="border-radius: 4px; border: 1px solid #eee;" />
+        </div>
       </n-form-item>
       
       <n-form-item label="属性">
@@ -202,6 +235,24 @@ onMounted(() => {
         </n-space>
       </n-form-item>
     </n-form>
+
+    <n-modal v-model:show="showCoverModal" preset="card" title="选择封面图" style="width: 720px">
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; max-height: 500px; overflow-y: auto;">
+        <div
+          v-for="img in coverImages"
+          :key="img.id"
+          style="width: 160px; cursor: pointer; border: 2px solid transparent; border-radius: 4px; padding: 4px;"
+          :style="{ borderColor: form.thumb === img.link ? '#2080f0' : 'transparent' }"
+          @click="selectCover(img)"
+        >
+          <n-image width="150" height="150" :src="img.link" style="object-fit: cover; border-radius: 4px;" />
+          <div style="font-size: 12px; text-align: center; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ img.name }}</div>
+        </div>
+        <div v-if="coverImages.length === 0 && !coverLoading" style="padding: 24px; color: #999; text-align: center; width: 100%;">
+          暂无上传图片，请先在附件管理中上传
+        </div>
+      </div>
+    </n-modal>
   </n-card>
 </template>
 

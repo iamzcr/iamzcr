@@ -1,10 +1,19 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { NMenu, NDropdown, NButton } from 'naive-ui'
+import { NMenu, NDropdown, NButton, NIcon } from 'naive-ui'
 import { menuApi, authApi } from './api'
 
-const collapsed = ref(true)
+function getCollapsed(): boolean {
+  const stored = localStorage.getItem('sidebar_collapsed')
+  return stored !== null ? stored === 'true' : true
+}
+
+function setCollapsed(val: boolean) {
+  localStorage.setItem('sidebar_collapsed', String(val))
+}
+
+const collapsed = ref(getCollapsed())
 const route = useRoute()
 const router = useRouter()
 
@@ -16,6 +25,11 @@ const selectedMenuKey = computed(() => {
   if (route.path.startsWith('/articles/edit/')) return '/articles'
   return route.path
 })
+
+function toggleCollapsed() {
+  collapsed.value = !collapsed.value
+  setCollapsed(collapsed.value)
+}
 
 async function loadAdminInfo() {
   const token = localStorage.getItem('admin_token')
@@ -179,7 +193,10 @@ watch(
   <n-message-provider>
     <div id="app-container">
       <div class="sidebar" :class="{ collapsed }" v-if="!isLoginPage">
-        <div class="logo">{{ collapsed ? 'B' : 'Blog Admin' }}</div>
+        <div class="logo">
+          <span v-if="collapsed" class="logo-short">B</span>
+          <span v-else class="logo-full">Blog Admin</span>
+        </div>
         <n-menu
           :collapsed="collapsed"
           :collapsed-width="64"
@@ -193,8 +210,18 @@ watch(
       </div>
       <div class="main-content" v-if="!isLoginPage">
         <div class="header">
-          <n-button text class="collapse-trigger" @click="collapsed = !collapsed" :title="collapsed ? '展开菜单' : '收起菜单'">
-            <span class="collapse-icon" aria-hidden="true">{{ collapsed ? '>>' : '<<' }}</span>
+          <n-button text class="collapse-trigger" @click="toggleCollapsed" :title="collapsed ? '展开菜单' : '收起菜单'">
+            <n-icon size="18">
+              <svg v-if="collapsed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+              </svg>
+              <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </n-icon>
           </n-button>
           <div class="user-info">
             <n-dropdown :options="userOptions" @select="handleUserSelect">
@@ -239,7 +266,7 @@ body, html {
   border-right: 1px solid #e2e8f0;
   overflow-y: auto;
   flex-shrink: 0;
-  transition: width 0.2s ease, box-shadow 0.2s ease;
+  transition: width 0.2s ease;
 }
 
 #app-container > .sidebar.collapsed {
@@ -269,22 +296,32 @@ body, html {
   background: #2563eb;
 }
 
+.sidebar.collapsed :deep(.n-menu-item-content) {
+  margin: 4px 0;
+  justify-content: center;
+}
+
 .sidebar .logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60px;
   background: #ffffff;
   color: #0f172a;
   border-bottom: 1px solid #e2e8f0;
-  padding: 16px;
-  font-size: 18px;
   font-weight: bold;
-  text-align: center;
   white-space: nowrap;
   overflow: hidden;
-  transition: padding 0.2s ease, font-size 0.2s ease;
+  transition: padding 0.2s ease;
 }
 
-.sidebar.collapsed .logo {
-  padding: 16px 0;
-  font-size: 16px;
+.logo-full {
+  font-size: 18px;
+}
+
+.logo-short {
+  font-size: 22px;
+  letter-spacing: 1px;
 }
 
 #app-container > .main-content {
@@ -319,21 +356,14 @@ body, html {
   color: #475569;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .collapse-trigger:hover {
   background: #eef2ff;
   color: #1d4ed8;
-}
-
-.collapse-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: -1px;
 }
 
 .header .username {

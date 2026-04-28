@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
-import { NDataTable, NButton, NModal, NForm, NFormItem, NInput, NInputNumber, NSwitch, NTag } from 'naive-ui'
+import { NDataTable, NButton, NModal, NForm, NFormItem, NInput, NInputNumber, NSwitch, NTag, NSpace, useMessage } from 'naive-ui'
 import { categoryApi } from '../api'
 
 const categories = ref<any[]>([])
@@ -8,6 +8,7 @@ const loading = ref(false)
 const showModal = ref(false)
 const pagination = ref({ page: 1, pageSize: 10, itemCount: 0 })
 const editingCategory = ref({ id: 0, type: '', parent: '', mark: '', author: '', name: '', weight: 0, status: 1 })
+const message = useMessage()
 
 const columns = [
   { title: 'ID', key: 'id', width: 60 },
@@ -16,7 +17,10 @@ const columns = [
   { title: '类型', key: 'type' },
   { title: '权重', key: 'weight', width: 60 },
   { title: '状态', key: 'status', width: 60, render: (row: any) => h(NTag, { type: row.status === 1 ? 'success' : 'default', size: 'small' }, () => row.status === 1 ? '启用' : '禁用') },
-  { title: '操作', key: 'actions', width: 100, render: (row: any) => h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑') }
+  { title: '操作', key: 'actions', width: 150, render: (row: any) => h(NSpace, () => [
+    h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑'),
+    h(NButton, { size: 'small', type: 'error', onClick: () => deleteCategory(row.id) }, () => '删除')
+  ])}
 ]
 
 async function loadCategories() {
@@ -42,6 +46,12 @@ async function saveCategory() {
     await categoryApi.create(editingCategory.value)
   }
   showModal.value = false
+  loadCategories()
+}
+
+async function deleteCategory(id: number) {
+  await categoryApi.delete(id)
+  message.success('删除成功')
   loadCategories()
 }
 

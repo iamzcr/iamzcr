@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
-import { NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSwitch } from 'naive-ui'
+import { NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSwitch, NSpace, useMessage } from 'naive-ui'
 import { adminGroupApi } from '../api'
 
 const groups = ref<any[]>([])
 const loading = ref(false)
 const showModal = ref(false)
 const editingGroup = ref({ id: 0, mark: '', name: '', description: '', menu_permit: '', menu_modules: '', allow_ip: '', status: 1 })
+const message = useMessage()
 
 function formatDate(time: number | string) {
   if (!time) return '-'
@@ -28,7 +29,7 @@ const columns = [
   { title: '描述', key: 'description', ellipsis: { tooltip: true } },
   { title: '状态', key: 'status', width: 80, render: (row: any) => h('span', row.status === 1 ? '启用' : '禁用') },
   { title: '创建时间', key: 'create_time', width: 180, render: (row: any) => formatDate(row.create_time) },
-  { title: '操作', key: 'actions', width: 120, render: (row: any) => h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑') }
+  { title: '操作', key: 'actions', width: 150, render: (row: any) => h(NSpace, () => [h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑'), h(NButton, { size: 'small', type: 'error', onClick: () => deleteGroup(row.id) }, () => '删除')]) }
 ]
 
 async function loadGroups() {
@@ -53,6 +54,12 @@ async function saveGroup() {
     await adminGroupApi.create(editingGroup.value)
   }
   showModal.value = false
+  loadGroups()
+}
+
+async function deleteGroup(id: number) {
+  await adminGroupApi.delete(id)
+  message.success('删除成功')
   loadGroups()
 }
 
