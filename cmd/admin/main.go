@@ -5,6 +5,7 @@ import (
 	"iamzcr/handlers/admin"
 	"iamzcr/middleware"
 	"iamzcr/models"
+	svc "iamzcr/services/admin"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -14,12 +15,28 @@ func main() {
 	cfg := config.Load()
 	models.InitDB(cfg)
 
+	articleSvc := svc.NewArticleService()
+	adminSvc := svc.NewAdminService()
+	categorySvc := svc.NewCategoryService()
+	directorySvc := svc.NewDirectoryService()
+	tagsSvc := svc.NewTagsService()
+	menuSvc := svc.NewMenuService()
+	commentSvc := svc.NewCommentService()
+	websiteSvc := svc.NewWebsiteService()
+	attachSvc := svc.NewAttachService()
+	langSvc := svc.NewLangService()
+	logSvc := svc.NewLogService()
+	messageSvc := svc.NewMessageService()
+	permitSvc := svc.NewPermitService()
+	readSvc := svc.NewReadService()
+	adminGroupSvc := svc.NewAdminGroupService()
+
 	r := gin.Default()
 	r.Use(middleware.CorsMiddleware())
 
 	api := r.Group("/api")
 	{
-		adminHandler := admin.NewAdminHandler()
+		adminHandler := admin.NewAdminHandler(articleSvc, adminSvc)
 		api.POST("/login", adminHandler.Login)
 
 		adminGroup := api.Group("")
@@ -34,48 +51,48 @@ func main() {
 			adminGroup.PUT("/articles/:id", adminHandler.UpdateArticle)
 			adminGroup.DELETE("/articles/:id", adminHandler.DeleteArticle)
 
-			categoryHandler := admin.NewCategoryHandler()
+			categoryHandler := admin.NewCategoryHandler(categorySvc)
 			adminGroup.GET("/categories", categoryHandler.List)
 			adminGroup.GET("/categories/:id", categoryHandler.Get)
 			adminGroup.POST("/categories", categoryHandler.Create)
 			adminGroup.PUT("/categories/:id", categoryHandler.Update)
 			adminGroup.DELETE("/categories/:id", categoryHandler.Delete)
 
-			commentHandler := admin.NewCommentHandler()
+			commentHandler := admin.NewCommentHandler(commentSvc)
 			adminGroup.GET("/comments", commentHandler.List)
 			adminGroup.GET("/comments/:id", commentHandler.Get)
 			adminGroup.POST("/comments", commentHandler.Create)
 			adminGroup.PUT("/comments/:id", commentHandler.Update)
 			adminGroup.DELETE("/comments/:id", commentHandler.Delete)
 
-			menuHandler := admin.NewMenuHandler()
+			menuHandler := admin.NewMenuHandler(menuSvc)
 			adminGroup.GET("/menus", menuHandler.List)
 			adminGroup.GET("/menus/:id", menuHandler.Get)
 			adminGroup.POST("/menus", menuHandler.Create)
 			adminGroup.PUT("/menus/:id", menuHandler.Update)
 			adminGroup.DELETE("/menus/:id", menuHandler.Delete)
 
-			tagsHandler := admin.NewTagsHandler()
+			tagsHandler := admin.NewTagsHandler(tagsSvc)
 			adminGroup.GET("/tags", tagsHandler.List)
 			adminGroup.GET("/tags/:id", tagsHandler.Get)
 			adminGroup.POST("/tags", tagsHandler.Create)
 			adminGroup.PUT("/tags/:id", tagsHandler.Update)
 			adminGroup.DELETE("/tags/:id", tagsHandler.Delete)
 
-			directoryHandler := admin.NewDirectoryHandler()
+			directoryHandler := admin.NewDirectoryHandler(directorySvc)
 			adminGroup.GET("/directories", directoryHandler.List)
 			adminGroup.GET("/directories/:id", directoryHandler.Get)
 			adminGroup.POST("/directories", directoryHandler.Create)
 			adminGroup.PUT("/directories/:id", directoryHandler.Update)
 			adminGroup.DELETE("/directories/:id", directoryHandler.Delete)
 
-			websiteHandler := admin.NewWebsiteHandler()
+			websiteHandler := admin.NewWebsiteHandler(websiteSvc)
 			adminGroup.GET("/website", websiteHandler.Get)
 			adminGroup.GET("/website/list", websiteHandler.List)
 			adminGroup.PUT("/website", websiteHandler.Update)
 			adminGroup.DELETE("/website/:id", websiteHandler.Delete)
 
-			attachHandler := admin.NewAttachHandler()
+			attachHandler := admin.NewAttachHandler(attachSvc)
 			adminGroup.GET("/attaches", attachHandler.List)
 			adminGroup.GET("/attaches/:id", attachHandler.Get)
 			adminGroup.POST("/attaches", attachHandler.Create)
@@ -83,34 +100,34 @@ func main() {
 			adminGroup.DELETE("/attaches/:id", attachHandler.Delete)
 			adminGroup.POST("/upload", attachHandler.Upload)
 
-			langHandler := admin.NewLangHandler()
+			langHandler := admin.NewLangHandler(langSvc)
 			adminGroup.GET("/langs", langHandler.List)
 			adminGroup.GET("/langs/:id", langHandler.Get)
 			adminGroup.POST("/langs", langHandler.Create)
 			adminGroup.PUT("/langs/:id", langHandler.Update)
 			adminGroup.DELETE("/langs/:id", langHandler.Delete)
 
-			logHandler := admin.NewLogHandler()
+			logHandler := admin.NewLogHandler(logSvc)
 			adminGroup.GET("/logs", logHandler.List)
 			adminGroup.GET("/logs/:id", logHandler.Get)
 			adminGroup.POST("/logs", logHandler.Create)
 			adminGroup.DELETE("/logs/:id", logHandler.Delete)
 
-			messageHandler := admin.NewMessageHandler()
+			messageHandler := admin.NewMessageHandler(messageSvc)
 			adminGroup.GET("/messages", messageHandler.List)
 			adminGroup.GET("/messages/:id", messageHandler.Get)
 			adminGroup.POST("/messages", messageHandler.Create)
 			adminGroup.PUT("/messages/:id", messageHandler.Update)
 			adminGroup.DELETE("/messages/:id", messageHandler.Delete)
 
-			permitHandler := admin.NewPermitHandler()
+			permitHandler := admin.NewPermitHandler(permitSvc)
 			adminGroup.GET("/permits", permitHandler.List)
 			adminGroup.GET("/permits/:id", permitHandler.Get)
 			adminGroup.POST("/permits", permitHandler.Create)
 			adminGroup.PUT("/permits/:id", permitHandler.Update)
 			adminGroup.DELETE("/permits/:id", permitHandler.Delete)
 
-			readHandler := admin.NewReadHandler()
+			readHandler := admin.NewReadHandler(readSvc)
 			adminGroup.GET("/reads", readHandler.List)
 			adminGroup.GET("/reads/:id", readHandler.Get)
 			adminGroup.POST("/reads", readHandler.Create)
@@ -124,7 +141,7 @@ func main() {
 			adminGroup.POST("/admins/:id/password", adminHandler.ChangeAdminPassword)
 			adminGroup.POST("/admin/password", adminHandler.ChangePassword)
 
-			adminGroupHandler := admin.NewAdminGroupHandler()
+			adminGroupHandler := admin.NewAdminGroupHandler(adminGroupSvc)
 			adminGroup.GET("/admin_groups", adminGroupHandler.List)
 			adminGroup.GET("/admin_groups/:id", adminGroupHandler.Get)
 			adminGroup.POST("/admin_groups", adminGroupHandler.Create)

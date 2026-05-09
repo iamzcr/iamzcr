@@ -2,28 +2,29 @@ package admin
 
 import (
 	"iamzcr/models"
+	svc "iamzcr/services/admin"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-type CategoryHandler struct{}
+type CategoryHandler struct {
+	svc *svc.CategoryService
+}
 
-func NewCategoryHandler() *CategoryHandler {
-	return &CategoryHandler{}
+func NewCategoryHandler(s *svc.CategoryService) *CategoryHandler {
+	return &CategoryHandler{svc: s}
 }
 
 func (h *CategoryHandler) List(c *gin.Context) {
-	var categories []models.Category
-	var total int64
+	page := parseInt(c.DefaultQuery("page", "1"))
+	pageSize := parseInt(c.DefaultQuery("page_size", "10"))
 
-	page := c.DefaultQuery("page", "1")
-	pageSize := c.DefaultQuery("page_size", "10")
-
-	models.DB.Model(&models.Category{}).Count(&total)
-
-	models.DB.Order("weight DESC").Limit(parseInt(pageSize)).Offset((parseInt(page) - 1) * parseInt(pageSize)).Find(&categories)
+	categories, total, err := h.svc.List(page, pageSize)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
@@ -35,21 +36,11 @@ func (h *CategoryHandler) List(c *gin.Context) {
 	})
 }
 
-func parseInt(s string) int {
-	var n int
-	for _, c := range s {
-		if c >= '0' && c <= '9' {
-			n = n*10 + int(c-'0')
-		}
-	}
-	return n
-}
-
 func (h *CategoryHandler) Get(c *gin.Context) {
-	id := c.Param("id")
-	var category models.Category
+	id := parseInt(c.Param("id"))
 
-	if err := models.DB.First(&category, id).Error; err != nil {
+	category, err := h.svc.Get(id)
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "Category not found"})
 		return
 	}
@@ -68,10 +59,7 @@ func (h *CategoryHandler) Create(c *gin.Context) {
 		return
 	}
 
-	category.CreateTime = int(time.Now().Unix())
-	category.UpdateTime = int(time.Now().Unix())
-
-	if err := models.DB.Create(&category).Error; err != nil {
+	if err := h.svc.Create(&category); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
 		return
 	}
@@ -84,13 +72,7 @@ func (h *CategoryHandler) Create(c *gin.Context) {
 }
 
 func (h *CategoryHandler) Update(c *gin.Context) {
-	id := c.Param("id")
-	var category models.Category
-
-	if err := models.DB.First(&category, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "Category not found"})
-		return
-	}
+	id := parseInt(c.Param("id"))
 
 	var input struct {
 		Type   string `json:"type"`
@@ -107,31 +89,33 @@ func (h *CategoryHandler) Update(c *gin.Context) {
 		return
 	}
 
-	category.Type = input.Type
-	category.Parent = input.Parent
-	category.Mark = input.Mark
-	category.Author = input.Author
-	category.Name = input.Name
-	category.Weight = input.Weight
-	category.Status = input.Status
-	category.UpdateTime = int(time.Now().Unix())
+	category := &models.Category{
+		Type:   input.Type,
+		Parent: input.Parent,
+		Mark:   input.Mark,
+		Author: input.Author,
+		Name:   input.Name,
+		Weight: input.Weight,
+		Status: input.Status,
+	}
 
-	if err := models.DB.Save(&category).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
+	updated, err := h.svc.Update(id, category)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "Category not found"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
 		"message": "success",
-		"data":    category,
+		"data":    updated,
 	})
 }
 
 func (h *CategoryHandler) Delete(c *gin.Context) {
-	id := c.Param("id")
+	id := parseInt(c.Param("id"))
 
-	if err := models.DB.Delete(&models.Category{}, id).Error; err != nil {
+	if err := h.svc.Delete(id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
 		return
 	}

@@ -1,8 +1,7 @@
 package frontend
 
 import (
-	"iamzcr/models"
-	"iamzcr/services"
+	svc "iamzcr/services/frontend"
 	"net/http"
 	"strconv"
 
@@ -10,12 +9,26 @@ import (
 )
 
 type FrontendHandler struct {
-	articleService *services.ArticleService
+	articleSvc   *svc.ArticleService
+	categorySvc  *svc.CategoryService
+	directorySvc *svc.DirectoryService
+	tagsSvc      *svc.TagsService
+	websiteSvc   *svc.WebsiteService
 }
 
-func NewFrontendHandler() *FrontendHandler {
+func NewFrontendHandler(
+	articleSvc *svc.ArticleService,
+	categorySvc *svc.CategoryService,
+	directorySvc *svc.DirectoryService,
+	tagsSvc *svc.TagsService,
+	websiteSvc *svc.WebsiteService,
+) *FrontendHandler {
 	return &FrontendHandler{
-		articleService: services.NewArticleService(),
+		articleSvc:   articleSvc,
+		categorySvc:  categorySvc,
+		directorySvc: directorySvc,
+		tagsSvc:      tagsSvc,
+		websiteSvc:   websiteSvc,
 	}
 }
 
@@ -26,28 +39,7 @@ func (h *FrontendHandler) ListArticles(c *gin.Context) {
 	did := c.DefaultQuery("did", "")
 	tid := c.DefaultQuery("tid", "")
 
-	articles, total := h.articleService.ListPublished(page, pageSize, cid, did, tid)
-
-	type ArticleWithTags struct {
-		models.Article
-		Tags []models.Tags `json:"tags"`
-	}
-
-	result := make([]ArticleWithTags, len(articles))
-	for i, article := range articles {
-		result[i].Article = article
-		var articleTags []models.ArticleTags
-		models.DB.Where("aid = ?", article.ID).Find(&articleTags)
-		var tagIds []int
-		for _, at := range articleTags {
-			tagIds = append(tagIds, at.Tid)
-		}
-		if len(tagIds) > 0 {
-			var tags []models.Tags
-			models.DB.Where("id IN ?", tagIds).Find(&tags)
-			result[i].Tags = tags
-		}
-	}
+	result, total := h.articleSvc.ListPublished(page, pageSize, cid, did, tid)
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
@@ -61,7 +53,7 @@ func (h *FrontendHandler) ListArticles(c *gin.Context) {
 
 func (h *FrontendHandler) GetArticle(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	article := h.articleService.GetByID(id)
+	article := h.articleSvc.GetByID(id)
 
 	if article == nil {
 		c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "Article not found"})
@@ -76,8 +68,11 @@ func (h *FrontendHandler) GetArticle(c *gin.Context) {
 }
 
 func (h *FrontendHandler) GetCategories(c *gin.Context) {
-	var categories []models.Category
-	models.DB.Where("status = ?", 1).Find(&categories)
+	categories, err := h.categorySvc.List()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
@@ -87,8 +82,11 @@ func (h *FrontendHandler) GetCategories(c *gin.Context) {
 }
 
 func (h *FrontendHandler) GetDirectories(c *gin.Context) {
-	var directories []models.Directory
-	models.DB.Where("status = ?", 1).Find(&directories)
+	directories, err := h.directorySvc.List()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
@@ -98,8 +96,11 @@ func (h *FrontendHandler) GetDirectories(c *gin.Context) {
 }
 
 func (h *FrontendHandler) GetTags(c *gin.Context) {
-	var tags []models.Tags
-	models.DB.Where("status = ?", 1).Find(&tags)
+	tags, err := h.tagsSvc.List()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
@@ -109,12 +110,10 @@ func (h *FrontendHandler) GetTags(c *gin.Context) {
 }
 
 func (h *FrontendHandler) GetWebsite(c *gin.Context) {
-	var websites []models.Website
-	models.DB.Find(&websites)
-
-	data := make(map[string]string)
-	for _, w := range websites {
-		data[w.Key] = w.Value
+	data, err := h.websiteSvc.List()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{

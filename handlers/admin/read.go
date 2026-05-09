@@ -2,41 +2,40 @@ package admin
 
 import (
 	"iamzcr/models"
+	svc "iamzcr/services/admin"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
-type ReadHandler struct{}
+type ReadHandler struct {
+	svc *svc.ReadService
+}
 
-func NewReadHandler() *ReadHandler {
-	return &ReadHandler{}
+func NewReadHandler(s *svc.ReadService) *ReadHandler {
+	return &ReadHandler{svc: s}
 }
 
 func (h *ReadHandler) List(c *gin.Context) {
-	var reads []models.Read
-	var total int64
-
-	page := c.DefaultQuery("page", "1")
-	pageSize := c.DefaultQuery("page_size", "10")
+	page := parseInt(c.DefaultQuery("page", "1"))
+	pageSize := parseInt(c.DefaultQuery("page_size", "10"))
 	aid := c.Query("aid")
 
-	query := models.DB.Model(&models.Read{})
-	if aid != "" {
-		query = query.Where("aid = ?", aid)
+	reads, total, err := h.svc.List(page, pageSize, aid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": err.Error()})
+		return
 	}
-	query.Count(&total)
-	query.Order("id DESC").Limit(parseInt(pageSize)).Offset((parseInt(page) - 1) * parseInt(pageSize)).Find(&reads)
 
 	c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "success", "data": gin.H{"list": reads, "total": total}})
 }
 
 func (h *ReadHandler) Get(c *gin.Context) {
-	id := c.Param("id")
-	var read models.Read
-	if err := models.DB.First(&read, id).Error; err != nil {
+	id := parseInt(c.Param("id"))
+
+	read, err := h.svc.Get(id)
+	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"code": 404, "msg": "记录不存在"})
 			return
@@ -53,8 +52,7 @@ func (h *ReadHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "msg": err.Error()})
 		return
 	}
-	read.CreateTime = int(time.Now().Unix())
-	if err := models.DB.Create(&read).Error; err != nil {
+	if err := h.svc.Create(&read); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": err.Error()})
 		return
 	}
@@ -62,8 +60,8 @@ func (h *ReadHandler) Create(c *gin.Context) {
 }
 
 func (h *ReadHandler) Delete(c *gin.Context) {
-	id := c.Param("id")
-	if err := models.DB.Delete(&models.Read{}, id).Error; err != nil {
+	id := parseInt(c.Param("id"))
+	if err := h.svc.Delete(id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": err.Error()})
 		return
 	}

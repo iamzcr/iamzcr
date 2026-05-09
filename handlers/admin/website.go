@@ -1,25 +1,28 @@
 package admin
 
 import (
-	"iamzcr/models"
+	svc "iamzcr/services/admin"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
-type WebsiteHandler struct{}
+type WebsiteHandler struct {
+	svc *svc.WebsiteService
+}
 
-func NewWebsiteHandler() *WebsiteHandler {
-	return &WebsiteHandler{}
+func NewWebsiteHandler(s *svc.WebsiteService) *WebsiteHandler {
+	return &WebsiteHandler{svc: s}
 }
 
 func (h *WebsiteHandler) List(c *gin.Context) {
-	var websites []models.Website
-	models.DB.Order("id DESC").Find(&websites)
-
+	websites, err := h.svc.List()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
 		"message": "success",
@@ -28,14 +31,11 @@ func (h *WebsiteHandler) List(c *gin.Context) {
 }
 
 func (h *WebsiteHandler) Get(c *gin.Context) {
-	var websites []models.Website
-	models.DB.Find(&websites)
-
-	data := make(map[string]interface{})
-	for _, w := range websites {
-		data[w.Key] = w.Value
+	data, err := h.svc.Get()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
+		return
 	}
-
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
 		"message": "success",
@@ -50,22 +50,9 @@ func (h *WebsiteHandler) Update(c *gin.Context) {
 		return
 	}
 
-	for key, value := range input {
-		var website models.Website
-		if err := models.DB.Where("`key` = ?", key).First(&website).Error; err == nil {
-			website.Value = value
-			website.UpdateTime = int(time.Now().Unix())
-			models.DB.Save(&website)
-		} else {
-			website := models.Website{
-				Key:        key,
-				Value:      value,
-				Staus:      1,
-				CreateTime: int(time.Now().Unix()),
-				UpdateTime: int(time.Now().Unix()),
-			}
-			models.DB.Create(&website)
-		}
+	if err := h.svc.Upsert(input); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -81,7 +68,7 @@ func (h *WebsiteHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := models.DB.Delete(&models.Website{}, id).Error; err != nil {
+	if err := h.svc.Delete(id); err != nil {
 		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "记录不存在"})
 			return

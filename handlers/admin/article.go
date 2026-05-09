@@ -1,22 +1,22 @@
 package admin
 
 import (
-	"iamzcr/models"
-	"iamzcr/services"
+	svc "iamzcr/services/admin"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 type AdminHandler struct {
-	articleService *services.ArticleService
+	articleSvc *svc.ArticleService
+	adminSvc   *svc.AdminService
 }
 
-func NewAdminHandler() *AdminHandler {
+func NewAdminHandler(articleSvc *svc.ArticleService, adminSvc *svc.AdminService) *AdminHandler {
 	return &AdminHandler{
-		articleService: services.NewArticleService(),
+		articleSvc: articleSvc,
+		adminSvc:   adminSvc,
 	}
 }
 
@@ -31,53 +31,16 @@ func (h *AdminHandler) Login(c *gin.Context) {
 		return
 	}
 
-	if input.Username == "test" && input.Password == "admin123" {
-		token, _ := generateTestToken()
-		c.JSON(http.StatusOK, gin.H{
-			"code":    0,
-			"message": "success",
-			"data": gin.H{
-				"id":       999,
-				"username": "test",
-				"name":     "测试用户",
-				"group":    "超级管理员",
-				"token":    token,
-			},
-		})
+	result, err := h.adminSvc.Login(input.Username, input.Password, c.ClientIP())
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "message": err.Error()})
 		return
 	}
-
-	var admin models.Admin
-	if err := models.DB.Where("username = ? AND status = 1", input.Username).First(&admin).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "message": "用户名或密码错误"})
-		return
-	}
-
-	if !validatePassword(input.Password, admin.Salt, admin.Password) {
-		c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "message": "用户名或密码错误"})
-		return
-	}
-
-	admin.LoginNum++
-	admin.LastLoginTime = int(time.Now().Unix())
-	admin.LastLoginIP = c.ClientIP()
-	models.DB.Save(&admin)
-
-	var adminGroup models.AdminGroup
-	models.DB.First(&adminGroup, admin.GroupID)
-
-	token, _ := generateTestToken()
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
 		"message": "success",
-		"data": gin.H{
-			"id":       admin.ID,
-			"username": admin.Username,
-			"name":     admin.Name,
-			"group":    adminGroup.Name,
-			"token":    token,
-		},
+		"data":    result,
 	})
 }
 
@@ -91,14 +54,11 @@ func (h *AdminHandler) Logout(c *gin.Context) {
 func (h *AdminHandler) GetAdminInfo(c *gin.Context) {
 	userID := c.GetInt("user_id")
 
-	var admin models.Admin
-	if err := models.DB.First(&admin, userID).Error; err != nil {
+	admin, adminGroup, err := h.adminSvc.GetAdminInfo(userID)
+	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "message": "用户不存在"})
 		return
 	}
-
-	var adminGroup models.AdminGroup
-	models.DB.First(&adminGroup, admin.GroupID)
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
@@ -116,28 +76,7 @@ func (h *AdminHandler) ListArticles(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
 
-	articles, total := h.articleService.List(page, pageSize)
-
-	type ArticleWithTags struct {
-		models.Article
-		Tags []models.Tags `json:"tags"`
-	}
-
-	result := make([]ArticleWithTags, len(articles))
-	for i, article := range articles {
-		result[i].Article = article
-		var articleTags []models.ArticleTags
-		models.DB.Where("aid = ?", article.ID).Find(&articleTags)
-		var tagIds []int
-		for _, at := range articleTags {
-			tagIds = append(tagIds, at.Tid)
-		}
-		if len(tagIds) > 0 {
-			var tags []models.Tags
-			models.DB.Where("id IN ?", tagIds).Find(&tags)
-			result[i].Tags = tags
-		}
-	}
+	result, total := h.articleSvc.ListWithTags(page, pageSize)
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
@@ -151,7 +90,7 @@ func (h *AdminHandler) ListArticles(c *gin.Context) {
 
 func (h *AdminHandler) GetArticle(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	article := h.articleService.GetByID(id)
+	article := h.articleSvc.GetByID(id)
 
 	if article == nil {
 		c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "Article not found"})
@@ -172,21 +111,16 @@ func (h *AdminHandler) CreateArticle(c *gin.Context) {
 		return
 	}
 
-	article := h.articleService.Create(input)
-
-	if tagIds, ok := input["tag_ids"].([]interface{}); ok {
-		for _, tid := range tagIds {
+	var tagIDs []int
+	if rawTagIDs, ok := input["tag_ids"].([]interface{}); ok {
+		for _, tid := range rawTagIDs {
 			if id, ok := tid.(float64); ok {
-				at := models.ArticleTags{
-					Aid:        article.ID,
-					Tid:        int(id),
-					CreateTime: int(time.Now().Unix()),
-					UpdateTime: int(time.Now().Unix()),
-				}
-				models.DB.Create(&at)
+				tagIDs = append(tagIDs, int(id))
 			}
 		}
 	}
+
+	article := h.articleSvc.Create(input, tagIDs)
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
@@ -204,26 +138,20 @@ func (h *AdminHandler) UpdateArticle(c *gin.Context) {
 		return
 	}
 
-	article := h.articleService.Update(id, input)
+	var tagIDs []int
+	if rawTagIDs, ok := input["tag_ids"].([]interface{}); ok {
+		for _, tid := range rawTagIDs {
+			if id, ok := tid.(float64); ok {
+				tagIDs = append(tagIDs, int(id))
+			}
+		}
+	}
+
+	article := h.articleSvc.Update(id, input, tagIDs)
 
 	if article == nil {
 		c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "Article not found"})
 		return
-	}
-
-	if tagIds, ok := input["tag_ids"].([]interface{}); ok {
-		models.DB.Where("aid = ?", id).Delete(&models.ArticleTags{})
-		for _, tid := range tagIds {
-			if id, ok := tid.(float64); ok {
-				at := models.ArticleTags{
-					Aid:        article.ID,
-					Tid:        int(id),
-					CreateTime: int(time.Now().Unix()),
-					UpdateTime: int(time.Now().Unix()),
-				}
-				models.DB.Create(&at)
-			}
-		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -236,8 +164,7 @@ func (h *AdminHandler) UpdateArticle(c *gin.Context) {
 func (h *AdminHandler) DeleteArticle(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 
-	models.DB.Where("aid = ?", id).Delete(&models.ArticleTags{})
-	success := h.articleService.Delete(id)
+	success := h.articleSvc.Delete(id)
 
 	if !success {
 		c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "Article not found"})

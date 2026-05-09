@@ -2,27 +2,29 @@ package admin
 
 import (
 	"iamzcr/models"
+	svc "iamzcr/services/admin"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-type CommentHandler struct{}
+type CommentHandler struct {
+	svc *svc.CommentService
+}
 
-func NewCommentHandler() *CommentHandler {
-	return &CommentHandler{}
+func NewCommentHandler(s *svc.CommentService) *CommentHandler {
+	return &CommentHandler{svc: s}
 }
 
 func (h *CommentHandler) List(c *gin.Context) {
-	var comments []models.Comment
-	var total int64
+	page := parseInt(c.DefaultQuery("page", "1"))
+	pageSize := parseInt(c.DefaultQuery("page_size", "10"))
 
-	page := c.DefaultQuery("page", "1")
-	pageSize := c.DefaultQuery("page_size", "10")
-
-	models.DB.Model(&models.Comment{}).Count(&total)
-	models.DB.Order("create_time DESC").Limit(parseInt(pageSize)).Offset((parseInt(page) - 1) * parseInt(pageSize)).Find(&comments)
+	comments, total, err := h.svc.List(page, pageSize)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
@@ -35,10 +37,10 @@ func (h *CommentHandler) List(c *gin.Context) {
 }
 
 func (h *CommentHandler) Get(c *gin.Context) {
-	id := c.Param("id")
-	var comment models.Comment
+	id := parseInt(c.Param("id"))
 
-	if err := models.DB.First(&comment, id).Error; err != nil {
+	comment, err := h.svc.Get(id)
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "Comment not found"})
 		return
 	}
@@ -57,10 +59,7 @@ func (h *CommentHandler) Create(c *gin.Context) {
 		return
 	}
 
-	comment.CreateTime = int(time.Now().Unix())
-	comment.UpdateTime = int(time.Now().Unix())
-
-	if err := models.DB.Create(&comment).Error; err != nil {
+	if err := h.svc.Create(&comment); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
 		return
 	}
@@ -73,13 +72,7 @@ func (h *CommentHandler) Create(c *gin.Context) {
 }
 
 func (h *CommentHandler) Update(c *gin.Context) {
-	id := c.Param("id")
-	var comment models.Comment
-
-	if err := models.DB.First(&comment, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "Comment not found"})
-		return
-	}
+	id := parseInt(c.Param("id"))
 
 	var input struct {
 		Content string `json:"content"`
@@ -90,25 +83,23 @@ func (h *CommentHandler) Update(c *gin.Context) {
 		return
 	}
 
-	comment.Content = input.Content
-	comment.UpdateTime = int(time.Now().Unix())
-
-	if err := models.DB.Save(&comment).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
+	updated, err := h.svc.Update(id, input.Content)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "Comment not found"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
 		"message": "success",
-		"data":    comment,
+		"data":    updated,
 	})
 }
 
 func (h *CommentHandler) Delete(c *gin.Context) {
-	id := c.Param("id")
+	id := parseInt(c.Param("id"))
 
-	if err := models.DB.Delete(&models.Comment{}, id).Error; err != nil {
+	if err := h.svc.Delete(id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
 		return
 	}

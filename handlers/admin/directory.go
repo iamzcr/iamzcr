@@ -2,32 +2,30 @@ package admin
 
 import (
 	"iamzcr/models"
+	svc "iamzcr/services/admin"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-type DirectoryHandler struct{}
+type DirectoryHandler struct {
+	svc *svc.DirectoryService
+}
 
-func NewDirectoryHandler() *DirectoryHandler {
-	return &DirectoryHandler{}
+func NewDirectoryHandler(s *svc.DirectoryService) *DirectoryHandler {
+	return &DirectoryHandler{svc: s}
 }
 
 func (h *DirectoryHandler) List(c *gin.Context) {
-	var dirs []models.Directory
-	var total int64
-
-	page := c.DefaultQuery("page", "1")
-	pageSize := c.DefaultQuery("page_size", "10")
+	page := parseInt(c.DefaultQuery("page", "1"))
+	pageSize := parseInt(c.DefaultQuery("page_size", "10"))
 	cid := c.Query("cid")
 
-	query := models.DB.Model(&models.Directory{})
-	if cid != "" {
-		query = query.Where("cid = ?", cid)
+	dirs, total, err := h.svc.List(page, pageSize, cid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
+		return
 	}
-	query.Count(&total)
-	query.Order("weight DESC").Limit(parseInt(pageSize)).Offset((parseInt(page) - 1) * parseInt(pageSize)).Find(&dirs)
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
@@ -40,10 +38,10 @@ func (h *DirectoryHandler) List(c *gin.Context) {
 }
 
 func (h *DirectoryHandler) Get(c *gin.Context) {
-	id := c.Param("id")
-	var dir models.Directory
+	id := parseInt(c.Param("id"))
 
-	if err := models.DB.First(&dir, id).Error; err != nil {
+	dir, err := h.svc.Get(id)
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "Directory not found"})
 		return
 	}
@@ -62,10 +60,7 @@ func (h *DirectoryHandler) Create(c *gin.Context) {
 		return
 	}
 
-	dir.CreateTime = int(time.Now().Unix())
-	dir.UpdateTime = int(time.Now().Unix())
-
-	if err := models.DB.Create(&dir).Error; err != nil {
+	if err := h.svc.Create(&dir); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
 		return
 	}
@@ -78,13 +73,7 @@ func (h *DirectoryHandler) Create(c *gin.Context) {
 }
 
 func (h *DirectoryHandler) Update(c *gin.Context) {
-	id := c.Param("id")
-	var dir models.Directory
-
-	if err := models.DB.First(&dir, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "Directory not found"})
-		return
-	}
+	id := parseInt(c.Param("id"))
 
 	var input struct {
 		Cid    int    `json:"cid"`
@@ -102,32 +91,34 @@ func (h *DirectoryHandler) Update(c *gin.Context) {
 		return
 	}
 
-	dir.Cid = input.Cid
-	dir.Type = input.Type
-	dir.Parent = input.Parent
-	dir.Mark = input.Mark
-	dir.Author = input.Author
-	dir.Name = input.Name
-	dir.Weight = input.Weight
-	dir.Status = input.Status
-	dir.UpdateTime = int(time.Now().Unix())
+	dir := &models.Directory{
+		Cid:    input.Cid,
+		Type:   input.Type,
+		Parent: input.Parent,
+		Mark:   input.Mark,
+		Author: input.Author,
+		Name:   input.Name,
+		Weight: input.Weight,
+		Status: input.Status,
+	}
 
-	if err := models.DB.Save(&dir).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
+	updated, err := h.svc.Update(id, dir)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "Directory not found"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
 		"message": "success",
-		"data":    dir,
+		"data":    updated,
 	})
 }
 
 func (h *DirectoryHandler) Delete(c *gin.Context) {
-	id := c.Param("id")
+	id := parseInt(c.Param("id"))
 
-	if err := models.DB.Delete(&models.Directory{}, id).Error; err != nil {
+	if err := h.svc.Delete(id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
 		return
 	}

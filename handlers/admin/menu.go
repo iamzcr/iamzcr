@@ -2,27 +2,29 @@ package admin
 
 import (
 	"iamzcr/models"
+	svc "iamzcr/services/admin"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-type MenuHandler struct{}
+type MenuHandler struct {
+	svc *svc.MenuService
+}
 
-func NewMenuHandler() *MenuHandler {
-	return &MenuHandler{}
+func NewMenuHandler(s *svc.MenuService) *MenuHandler {
+	return &MenuHandler{svc: s}
 }
 
 func (h *MenuHandler) List(c *gin.Context) {
-	var menus []models.Menu
-	var total int64
+	page := parseInt(c.DefaultQuery("page", "1"))
+	pageSize := parseInt(c.DefaultQuery("page_size", "10"))
 
-	page := c.DefaultQuery("page", "1")
-	pageSize := c.DefaultQuery("page_size", "10")
-
-	models.DB.Model(&models.Menu{}).Count(&total)
-	models.DB.Order("weight DESC").Limit(parseInt(pageSize)).Offset((parseInt(page) - 1) * parseInt(pageSize)).Find(&menus)
+	menus, total, err := h.svc.List(page, pageSize)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
@@ -35,10 +37,10 @@ func (h *MenuHandler) List(c *gin.Context) {
 }
 
 func (h *MenuHandler) Get(c *gin.Context) {
-	id := c.Param("id")
-	var menu models.Menu
+	id := parseInt(c.Param("id"))
 
-	if err := models.DB.First(&menu, id).Error; err != nil {
+	menu, err := h.svc.Get(id)
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "Menu not found"})
 		return
 	}
@@ -57,10 +59,7 @@ func (h *MenuHandler) Create(c *gin.Context) {
 		return
 	}
 
-	menu.CreateTime = int(time.Now().Unix())
-	menu.UpdateTime = int(time.Now().Unix())
-
-	if err := models.DB.Create(&menu).Error; err != nil {
+	if err := h.svc.Create(&menu); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
 		return
 	}
@@ -73,13 +72,7 @@ func (h *MenuHandler) Create(c *gin.Context) {
 }
 
 func (h *MenuHandler) Update(c *gin.Context) {
-	id := c.Param("id")
-	var menu models.Menu
-
-	if err := models.DB.First(&menu, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "Menu not found"})
-		return
-	}
+	id := parseInt(c.Param("id"))
 
 	var input struct {
 		Type   int    `json:"type"`
@@ -98,33 +91,35 @@ func (h *MenuHandler) Update(c *gin.Context) {
 		return
 	}
 
-	menu.Type = input.Type
-	menu.Mark = input.Mark
-	menu.Author = input.Author
-	menu.Name = input.Name
-	menu.Url = input.Url
-	menu.Parent = input.Parent
-	menu.Icon = input.Icon
-	menu.Weight = input.Weight
-	menu.Status = input.Status
-	menu.UpdateTime = int(time.Now().Unix())
+	menu := &models.Menu{
+		Type:   input.Type,
+		Mark:   input.Mark,
+		Author: input.Author,
+		Name:   input.Name,
+		Url:    input.Url,
+		Parent: input.Parent,
+		Icon:   input.Icon,
+		Weight: input.Weight,
+		Status: input.Status,
+	}
 
-	if err := models.DB.Save(&menu).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
+	updated, err := h.svc.Update(id, menu)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "Menu not found"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
 		"message": "success",
-		"data":    menu,
+		"data":    updated,
 	})
 }
 
 func (h *MenuHandler) Delete(c *gin.Context) {
-	id := c.Param("id")
+	id := parseInt(c.Param("id"))
 
-	if err := models.DB.Delete(&models.Menu{}, id).Error; err != nil {
+	if err := h.svc.Delete(id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
 		return
 	}

@@ -2,36 +2,39 @@ package admin
 
 import (
 	"iamzcr/models"
+	svc "iamzcr/services/admin"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
-type PermitHandler struct{}
+type PermitHandler struct {
+	svc *svc.PermitService
+}
 
-func NewPermitHandler() *PermitHandler {
-	return &PermitHandler{}
+func NewPermitHandler(s *svc.PermitService) *PermitHandler {
+	return &PermitHandler{svc: s}
 }
 
 func (h *PermitHandler) List(c *gin.Context) {
-	var permits []models.Permit
-	var total int64
+	page := parseInt(c.DefaultQuery("page", "1"))
+	pageSize := parseInt(c.DefaultQuery("page_size", "10"))
 
-	page := c.DefaultQuery("page", "1")
-	pageSize := c.DefaultQuery("page_size", "10")
-
-	models.DB.Model(&models.Permit{}).Count(&total)
-	models.DB.Order("weight DESC").Limit(parseInt(pageSize)).Offset((parseInt(page) - 1) * parseInt(pageSize)).Find(&permits)
+	permits, total, err := h.svc.List(page, pageSize)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": err.Error()})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "success", "data": gin.H{"list": permits, "total": total}})
 }
 
 func (h *PermitHandler) Get(c *gin.Context) {
-	id := c.Param("id")
-	var permit models.Permit
-	if err := models.DB.First(&permit, id).Error; err != nil {
+	id := parseInt(c.Param("id"))
+
+	permit, err := h.svc.Get(id)
+	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"code": 404, "msg": "记录不存在"})
 			return
@@ -48,8 +51,7 @@ func (h *PermitHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "msg": err.Error()})
 		return
 	}
-	permit.CreateTime = int(time.Now().Unix())
-	if err := models.DB.Create(&permit).Error; err != nil {
+	if err := h.svc.Create(&permit); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": err.Error()})
 		return
 	}
@@ -57,30 +59,22 @@ func (h *PermitHandler) Create(c *gin.Context) {
 }
 
 func (h *PermitHandler) Update(c *gin.Context) {
-	id := c.Param("id")
-	var permit models.Permit
-	if err := models.DB.First(&permit, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"code": 404, "msg": "记录不存在"})
-		return
-	}
+	id := parseInt(c.Param("id"))
 	var data map[string]interface{}
 	if err := c.ShouldBindJSON(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "msg": err.Error()})
 		return
 	}
-	delete(data, "id")
-	delete(data, "create_time")
-	data["update_time"] = int(time.Now().Unix())
-	if err := models.DB.Model(&permit).Updates(data).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": err.Error()})
+	if err := h.svc.Update(id, data); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"code": 404, "msg": "记录不存在"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "success", "data": permit})
+	c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "success"})
 }
 
 func (h *PermitHandler) Delete(c *gin.Context) {
-	id := c.Param("id")
-	if err := models.DB.Delete(&models.Permit{}, id).Error; err != nil {
+	id := parseInt(c.Param("id"))
+	if err := h.svc.Delete(id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": err.Error()})
 		return
 	}

@@ -5,6 +5,7 @@ import (
 	"iamzcr/handlers/frontend"
 	"iamzcr/middleware"
 	"iamzcr/models"
+	svc "iamzcr/services/frontend"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -14,12 +15,18 @@ func main() {
 	cfg := config.Load()
 	models.InitDB(cfg)
 
+	articleSvc := svc.NewArticleService()
+	categorySvc := svc.NewCategoryService()
+	directorySvc := svc.NewDirectoryService()
+	tagsSvc := svc.NewTagsService()
+	websiteSvc := svc.NewWebsiteService()
+
 	r := gin.Default()
 	r.Use(middleware.CorsMiddleware())
 
 	api := r.Group("/api")
 	{
-		frontendHandler := frontend.NewFrontendHandler()
+		frontendHandler := frontend.NewFrontendHandler(articleSvc, categorySvc, directorySvc, tagsSvc, websiteSvc)
 
 		api.GET("/articles", frontendHandler.ListArticles)
 		api.GET("/articles/:id", frontendHandler.GetArticle)

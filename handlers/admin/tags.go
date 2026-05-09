@@ -2,27 +2,29 @@ package admin
 
 import (
 	"iamzcr/models"
+	svc "iamzcr/services/admin"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-type TagsHandler struct{}
+type TagsHandler struct {
+	svc *svc.TagsService
+}
 
-func NewTagsHandler() *TagsHandler {
-	return &TagsHandler{}
+func NewTagsHandler(s *svc.TagsService) *TagsHandler {
+	return &TagsHandler{svc: s}
 }
 
 func (h *TagsHandler) List(c *gin.Context) {
-	var tags []models.Tags
-	var total int64
+	page := parseInt(c.DefaultQuery("page", "1"))
+	pageSize := parseInt(c.DefaultQuery("page_size", "10"))
 
-	page := c.DefaultQuery("page", "1")
-	pageSize := c.DefaultQuery("page_size", "10")
-
-	models.DB.Model(&models.Tags{}).Count(&total)
-	models.DB.Order("weight DESC").Limit(parseInt(pageSize)).Offset((parseInt(page) - 1) * parseInt(pageSize)).Find(&tags)
+	tags, total, err := h.svc.List(page, pageSize)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
@@ -35,10 +37,10 @@ func (h *TagsHandler) List(c *gin.Context) {
 }
 
 func (h *TagsHandler) Get(c *gin.Context) {
-	id := c.Param("id")
-	var tag models.Tags
+	id := parseInt(c.Param("id"))
 
-	if err := models.DB.First(&tag, id).Error; err != nil {
+	tag, err := h.svc.Get(id)
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "Tag not found"})
 		return
 	}
@@ -57,10 +59,7 @@ func (h *TagsHandler) Create(c *gin.Context) {
 		return
 	}
 
-	tag.CreateTime = int(time.Now().Unix())
-	tag.UpdateTime = int(time.Now().Unix())
-
-	if err := models.DB.Create(&tag).Error; err != nil {
+	if err := h.svc.Create(&tag); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
 		return
 	}
@@ -73,13 +72,7 @@ func (h *TagsHandler) Create(c *gin.Context) {
 }
 
 func (h *TagsHandler) Update(c *gin.Context) {
-	id := c.Param("id")
-	var tag models.Tags
-
-	if err := models.DB.First(&tag, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "Tag not found"})
-		return
-	}
+	id := parseInt(c.Param("id"))
 
 	var input struct {
 		Type   string `json:"type"`
@@ -96,31 +89,33 @@ func (h *TagsHandler) Update(c *gin.Context) {
 		return
 	}
 
-	tag.Type = input.Type
-	tag.Mark = input.Mark
-	tag.Author = input.Author
-	tag.Name = input.Name
-	tag.Weight = input.Weight
-	tag.Status = input.Status
-	tag.IsHot = input.IsHot
-	tag.UpdateTime = int(time.Now().Unix())
+	tag := &models.Tags{
+		Type:   input.Type,
+		Mark:   input.Mark,
+		Author: input.Author,
+		Name:   input.Name,
+		Weight: input.Weight,
+		Status: input.Status,
+		IsHot:  input.IsHot,
+	}
 
-	if err := models.DB.Save(&tag).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
+	updated, err := h.svc.Update(id, tag)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "Tag not found"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
 		"message": "success",
-		"data":    tag,
+		"data":    updated,
 	})
 }
 
 func (h *TagsHandler) Delete(c *gin.Context) {
-	id := c.Param("id")
+	id := parseInt(c.Param("id"))
 
-	if err := models.DB.Delete(&models.Tags{}, id).Error; err != nil {
+	if err := h.svc.Delete(id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
 		return
 	}

@@ -1,4 +1,4 @@
-package services
+package admin
 
 import (
 	"fmt"
@@ -10,6 +10,11 @@ type ArticleService struct{}
 
 func NewArticleService() *ArticleService {
 	return &ArticleService{}
+}
+
+type ArticleWithTags struct {
+	models.Article
+	Tags []models.Tags `json:"tags"`
 }
 
 func (s *ArticleService) List(page, pageSize int) ([]models.Article, int64) {
@@ -25,31 +30,26 @@ func (s *ArticleService) List(page, pageSize int) ([]models.Article, int64) {
 	return articles, total
 }
 
-func (s *ArticleService) ListPublished(page, pageSize int, cid, did, tid string) ([]models.Article, int64) {
-	var articles []models.Article
-	var total int64
+func (s *ArticleService) ListWithTags(page, pageSize int) ([]ArticleWithTags, int64) {
+	articles, total := s.List(page, pageSize)
 
-	query := models.DB.Model(&models.Article{}).Where("status = ?", 1)
-	if cid != "" {
-		query = query.Where("cid = ?", cid)
-	}
-	if did != "" {
-		query = query.Where("did = ?", did)
-	}
-	if tid != "" {
-		var articleIDs []int
-		models.DB.Model(&models.ArticleTags{}).Where("tid = ?", tid).Pluck("aid", &articleIDs)
-		if len(articleIDs) == 0 {
-			return []models.Article{}, 0
+	result := make([]ArticleWithTags, len(articles))
+	for i, article := range articles {
+		result[i].Article = article
+		var articleTags []models.ArticleTags
+		models.DB.Where("aid = ?", article.ID).Find(&articleTags)
+		var tagIds []int
+		for _, at := range articleTags {
+			tagIds = append(tagIds, at.Tid)
 		}
-		query = query.Where("id IN ?", articleIDs)
+		if len(tagIds) > 0 {
+			var tags []models.Tags
+			models.DB.Where("id IN ?", tagIds).Find(&tags)
+			result[i].Tags = tags
+		}
 	}
 
-	query.Count(&total)
-	offset := (page - 1) * pageSize
-	query.Offset(offset).Limit(pageSize).Order("create_time DESC").Find(&articles)
-
-	return articles, total
+	return result, total
 }
 
 func (s *ArticleService) Get(id int) *models.Article {
@@ -58,6 +58,43 @@ func (s *ArticleService) Get(id int) *models.Article {
 		return nil
 	}
 	return &article
+}
+
+func (s *ArticleService) GetByID(id int) map[string]interface{} {
+	var article models.Article
+	if err := models.DB.First(&article, id).Error; err != nil {
+		return nil
+	}
+
+	var category models.Category
+	if article.Cid > 0 {
+		models.DB.First(&category, article.Cid)
+	}
+
+	var directory models.Directory
+	if article.Did > 0 {
+		models.DB.First(&directory, article.Did)
+	}
+
+	var articleTags []models.ArticleTags
+	models.DB.Where("aid = ?", article.ID).Find(&articleTags)
+
+	var tagIds []int
+	for _, at := range articleTags {
+		tagIds = append(tagIds, at.Tid)
+	}
+
+	var tags []models.Tags
+	if len(tagIds) > 0 {
+		models.DB.Where("id IN ?", tagIds).Find(&tags)
+	}
+
+	return map[string]interface{}{
+		"article":   article,
+		"category":  category,
+		"directory": directory,
+		"tags":      tags,
+	}
 }
 
 func toInt(v interface{}) int {
@@ -77,7 +114,7 @@ func toInt(v interface{}) int {
 	}
 }
 
-func (s *ArticleService) Create(data map[string]interface{}) *models.Article {
+func (s *ArticleService) Create(data map[string]interface{}, tagIDs []int) *models.Article {
 	article := models.Article{
 		Cid:        toInt(data["cid"]),
 		Did:        toInt(data["did"]),
@@ -99,10 +136,21 @@ func (s *ArticleService) Create(data map[string]interface{}) *models.Article {
 		UpdateTime: int(time.Now().Unix()),
 	}
 	models.DB.Create(&article)
+
+	for _, tid := range tagIDs {
+		at := models.ArticleTags{
+			Aid:        article.ID,
+			Tid:        tid,
+			CreateTime: int(time.Now().Unix()),
+			UpdateTime: int(time.Now().Unix()),
+		}
+		models.DB.Create(&at)
+	}
+
 	return &article
 }
 
-func (s *ArticleService) Update(id int, data map[string]interface{}) *models.Article {
+func (s *ArticleService) Update(id int, data map[string]interface{}, tagIDs []int) *models.Article {
 	var article models.Article
 	if err := models.DB.First(&article, id).Error; err != nil {
 		return nil
@@ -159,47 +207,25 @@ func (s *ArticleService) Update(id int, data map[string]interface{}) *models.Art
 
 	article.UpdateTime = int(time.Now().Unix())
 	models.DB.Save(&article)
+
+	if tagIDs != nil {
+		models.DB.Where("aid = ?", id).Delete(&models.ArticleTags{})
+		for _, tid := range tagIDs {
+			at := models.ArticleTags{
+				Aid:        article.ID,
+				Tid:        tid,
+				CreateTime: int(time.Now().Unix()),
+				UpdateTime: int(time.Now().Unix()),
+			}
+			models.DB.Create(&at)
+		}
+	}
+
 	return &article
 }
 
 func (s *ArticleService) Delete(id int) bool {
+	models.DB.Where("aid = ?", id).Delete(&models.ArticleTags{})
 	result := models.DB.Delete(&models.Article{}, id)
 	return result.RowsAffected > 0
-}
-
-func (s *ArticleService) GetByID(id int) map[string]interface{} {
-	var article models.Article
-	if err := models.DB.First(&article, id).Error; err != nil {
-		return nil
-	}
-
-	var category models.Category
-	if article.Cid > 0 {
-		models.DB.First(&category, article.Cid)
-	}
-
-	var directory models.Directory
-	if article.Did > 0 {
-		models.DB.First(&directory, article.Did)
-	}
-
-	var articleTags []models.ArticleTags
-	models.DB.Where("aid = ?", article.ID).Find(&articleTags)
-
-	var tagIds []int
-	for _, at := range articleTags {
-		tagIds = append(tagIds, at.Tid)
-	}
-
-	var tags []models.Tags
-	if len(tagIds) > 0 {
-		models.DB.Where("id IN ?", tagIds).Find(&tags)
-	}
-
-	return map[string]interface{}{
-		"article":   article,
-		"category":  category,
-		"directory": directory,
-		"tags":      tags,
-	}
 }
