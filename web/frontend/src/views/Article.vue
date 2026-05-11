@@ -2,7 +2,7 @@
 import { ref, onMounted, computed, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { NButton, NSpace, NTag, NSpin, NEmpty } from 'naive-ui'
-import { articleApi, categoryApi, directoryApi, tagsApi, websiteApi } from '../api'
+import { articleApi, categoryApi, directoryApi, tagsApi } from '../api'
 import MarkdownIt from 'markdown-it'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
@@ -23,15 +23,6 @@ const category = ref<any>(null)
 const directory = ref<any>(null)
 const tags = ref<any[]>([])
 const loading = ref(false)
-
-const cdnUrl = ref('')
-
-function getFullUrl(path: string) {
-  if (!path) return ''
-  if (path.startsWith('http://') || path.startsWith('https://')) return path
-  if (!cdnUrl.value) return path
-  return cdnUrl.value.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '')
-}
 
 const latestArticles = ref<any[]>([])
 const categories = ref<any[]>([])
@@ -143,7 +134,6 @@ function addCopyButtons() {
 onMounted(() => {
   loadArticle()
   loadSidebarData()
-  websiteApi.get().then(res => { cdnUrl.value = res.data.data?.cdn_url || '' }).catch(() => {})
 })
 
 watch(() => route.params.id, () => {
