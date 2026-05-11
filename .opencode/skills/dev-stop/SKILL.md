@@ -25,7 +25,7 @@ if (Test-Path -LiteralPath $pidFile) {
   Write-Host "No running.pids file found. Trying fallback cleanup..."
 
   # Kill Go binaries
-  Get-Process -Name "air","admin","frontend" -ErrorAction SilentlyContinue | Stop-Process -Force
+  Get-Process -Name "admin","frontend" -ErrorAction SilentlyContinue | Stop-Process -Force
 
   # Kill processes on dev ports
   $ports = @(8081, 8082, 3000, 3001)

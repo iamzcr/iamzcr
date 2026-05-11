@@ -42,11 +42,11 @@ func (s *AttachService) Upload(file *multipart.FileHeader, assetDir string) (*mo
 		return nil, fmt.Errorf("文件写入失败")
 	}
 
-	link := "/asset/" + filename
+	link := "/cdn/asset/" + filename
 
 	var cdn models.Website
 	if err := models.DB.Where("`key` = ?", "cdn_url").First(&cdn).Error; err == nil && cdn.Value != "" {
-		link = cdn.Value + "/asset/" + filename
+		link = cdn.Value + "/cdn/asset/" + filename
 	}
 
 	attach := models.Attach{

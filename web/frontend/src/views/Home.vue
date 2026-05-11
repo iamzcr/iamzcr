@@ -2,7 +2,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { NEmpty, NTag, NSpin, NPagination } from 'naive-ui'
-import { articleApi, categoryApi, directoryApi, tagsApi } from '../api'
+import { articleApi, categoryApi, directoryApi, tagsApi, websiteApi } from '../api'
 
 const router = useRouter()
 const route = useRoute()
@@ -13,6 +13,15 @@ const categories = ref<any[]>([])
 const directories = ref<any[]>([])
 const allTags = ref<any[]>([])
 const loading = ref(false)
+
+const cdnUrl = ref('')
+
+function getFullUrl(path: string) {
+  if (!path) return ''
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  if (!cdnUrl.value) return path
+  return cdnUrl.value.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '')
+}
 
 const currentType = ref('')
 const currentId = ref(0)
@@ -97,63 +106,16 @@ watch(() => route.name, () => {
   loadData()
 })
 
-onMounted(loadData)
+onMounted(() => {
+  loadData()
+  websiteApi.get().then(res => { cdnUrl.value = res.data.data?.cdn_url || '' }).catch(() => {})
+})
 </script>
 
 <template>
   <div class="home-page">
     <n-spin :show="loading">
       <div class="layout">
-        <main class="main-content">
-          <n-empty v-if="!loading && articles.length === 0" description="暂无文章" />
-          <div class="articles-list">
-            <div 
-              v-for="article in articles" 
-              :key="article.id" 
-              class="article-card"
-              @click="goToArticle(article.id)"
-            >
-              <div class="article-cover" v-if="article.thumb">
-                <img :src="article.thumb" :alt="article.title" />
-              </div>
-              <div class="article-body">
-                <div class="article-meta">
-                  <n-tag v-if="getCategoryName(article.cid)" size="small" type="primary" @click.stop="goToCategory(article.cid)">
-                    {{ getCategoryName(article.cid) }}
-                  </n-tag>
-                  <n-tag v-if="getDirectoryName(article.did)" size="small" type="info">
-                    {{ getDirectoryName(article.did) }}
-                  </n-tag>
-                  <span class="article-date">{{ formatDate(article.create_time) }}</span>
-                </div>
-                <h2 class="article-title">{{ article.title }}</h2>
-                <p class="article-summary">{{ article.summary || article.desc || '暂无摘要' }}</p>
-                <div class="article-tags" v-if="getTags(article).length > 0">
-                  <n-tag 
-                    v-for="tag in getTags(article)" 
-                    :key="tag.id" 
-                    size="small" 
-                    type="warning"
-                    class="tag-item"
-                    @click.stop="goToTag(tag.id)"
-                  >
-                    {{ tag.name }}
-                  </n-tag>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-            <div class="pagination-wrapper" v-if="totalArticles > pageSize">
-              <n-pagination 
-                v-model:page="page" 
-                :page-size="pageSize" 
-                :item-count="totalArticles"
-                @update:page="(p: number) => { page = p; loadData() }"
-              />
-            </div>
-        </main>
-
         <aside class="sidebar">
           <div class="sidebar-section">
             <h3 class="section-title">最新文章</h3>
@@ -200,6 +162,56 @@ onMounted(loadData)
             </div>
           </div>
         </aside>
+
+        <main class="main-content">
+          <n-empty v-if="!loading && articles.length === 0" description="暂无文章" />
+          <div class="articles-list">
+            <div 
+              v-for="article in articles" 
+              :key="article.id" 
+              class="article-card"
+              @click="goToArticle(article.id)"
+            >
+              <div class="article-cover" v-if="article.thumb">
+                <img :src="getFullUrl(article.thumb)" :alt="article.title" />
+              </div>
+              <div class="article-body">
+                <div class="article-meta">
+                  <n-tag v-if="getCategoryName(article.cid)" size="small" type="primary" @click.stop="goToCategory(article.cid)">
+                    {{ getCategoryName(article.cid) }}
+                  </n-tag>
+                  <n-tag v-if="getDirectoryName(article.did)" size="small" type="info">
+                    {{ getDirectoryName(article.did) }}
+                  </n-tag>
+                  <span class="article-date">{{ formatDate(article.create_time) }}</span>
+                </div>
+                <h2 class="article-title">{{ article.title }}</h2>
+                <p class="article-summary">{{ article.summary || article.desc || '暂无摘要' }}</p>
+                <div class="article-tags" v-if="getTags(article).length > 0">
+                  <n-tag 
+                    v-for="tag in getTags(article)" 
+                    :key="tag.id" 
+                    size="small" 
+                    type="warning"
+                    class="tag-item"
+                    @click.stop="goToTag(tag.id)"
+                  >
+                    {{ tag.name }}
+                  </n-tag>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+            <div class="pagination-wrapper" v-if="totalArticles > pageSize">
+              <n-pagination 
+                v-model:page="page" 
+                :page-size="pageSize" 
+                :item-count="totalArticles"
+                @update:page="(p: number) => { page = p; loadData() }"
+              />
+            </div>
+        </main>
       </div>
     </n-spin>
   </div>
