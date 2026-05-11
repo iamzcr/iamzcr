@@ -1,6 +1,6 @@
 declare module '@kangc/v-md-editor' {
   import { App, Plugin } from 'vue'
-  const VMdEditor: Plugin & { use: (theme: any) => void }
+  const VMdEditor: Plugin & { use: (theme: any, options?: any) => void }
   export default VMdEditor
 }
 
