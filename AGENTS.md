@@ -45,9 +45,10 @@ Two different response conventions exist in handlers. **Match whichever one the 
 
 The frontends expect Convention A (check `res.data.code === 0`). When adding new endpoints, use Convention A unless the existing file already uses B.
 
-### JWT auth (hardcoded)
+### JWT auth
 - JWT secret: `"blog-admin-secret-key-2024"` (in `middleware/jwt.go`)
-- Test user: `test` / `admin123` bypasses DB auth; always gets `user_id=1, username="test"` in token
+- `ENV=development` (default): test user `test` / `admin123` bypasses DB auth; always gets `user_id=1, username="test"` in token
+- `ENV=production`: test user bypass is disabled; only real DB accounts work
 - Token expiry: 24 hours, HS256
 - Auth failure returns `{"code": 401, "message": "未登录"}` or `"登录已过期，请重新登录"`
 

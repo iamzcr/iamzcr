@@ -21,11 +21,11 @@ Execute this single PowerShell script (everything in ONE bash call — do NOT sp
 ```powershell
 $pids = @()
 
-$proc = Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$PWD'; go run ./cmd/admin" -WindowStyle Minimized -PassThru
+$proc = Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$PWD'; `$env:ENV = 'development'; go run ./cmd/admin" -WindowStyle Minimized -PassThru
 $pids += $proc.Id
 Write-Host "Admin API (8081) PID: $($proc.Id)"
 
-$proc = Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$PWD'; go run ./cmd/frontend" -WindowStyle Minimized -PassThru
+$proc = Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$PWD'; `$env:ENV = 'development'; go run ./cmd/frontend" -WindowStyle Minimized -PassThru
 $pids += $proc.Id
 Write-Host "Frontend API (8082) PID: $($proc.Id)"
 

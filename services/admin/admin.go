@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"iamzcr/config"
 	"iamzcr/middleware"
 	"iamzcr/models"
 	"time"
@@ -24,7 +25,7 @@ type LoginResult struct {
 }
 
 func (s *AdminService) Login(username, password, clientIP string) (*LoginResult, error) {
-	if username == "test" && password == "admin123" {
+	if config.Cfg.Env == "development" && username == "test" && password == "admin123" {
 		token, _ := generateToken(1, "test")
 		return &LoginResult{
 			ID:       999,

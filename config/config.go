@@ -17,6 +17,7 @@ type Config struct {
 	AdminPort    string
 	FrontendPort string
 	ProjectRoot  string
+	Env          string
 }
 
 func Load() *Config {
@@ -33,6 +34,7 @@ func Load() *Config {
 		AdminPort:    getEnv("ADMIN_PORT", "8081"),
 		FrontendPort: getEnv("FRONTEND_PORT", "8082"),
 		ProjectRoot:  root,
+		Env:          getEnv("ENV", "development"),
 	}
 	return Cfg
 }
