@@ -21,3 +21,7 @@ export const directoryApi = {
 export const tagsApi = {
 	list: (params?: any) => api.get('/tags', { params })
 }
+
+export const websiteApi = {
+  get: () => api.get('/website')
+}

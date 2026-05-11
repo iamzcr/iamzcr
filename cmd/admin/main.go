@@ -150,7 +150,7 @@ func main() {
 		}
 	}
 
-	r.Static("/asset", cfg.AssetDir())
+	r.Static("/cdn/asset", cfg.AssetDir())
 
 	log.Printf("Admin API server starting on port %s...", cfg.AdminPort)
 	r.Run(":" + cfg.AdminPort)

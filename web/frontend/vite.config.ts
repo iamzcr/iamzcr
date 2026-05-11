@@ -10,7 +10,7 @@ export default defineConfig({
         target: 'http://localhost:8082',
         changeOrigin: true
       },
-      '/asset': {
+      '/cdn/asset': {
         target: 'http://localhost:8082',
         changeOrigin: true
       }

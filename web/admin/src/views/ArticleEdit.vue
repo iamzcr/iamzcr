@@ -96,8 +96,8 @@ async function openCoverModal() {
 }
 
 function selectCover(img: any) {
-  form.value.thumb = img.link
   showCoverModal.value = false
+  form.value.thumb = img.link
 }
 
 function clearCover() {

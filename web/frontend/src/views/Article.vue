@@ -2,7 +2,7 @@
 import { ref, onMounted, computed, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { NButton, NSpace, NTag, NSpin, NEmpty } from 'naive-ui'
-import { articleApi, categoryApi, directoryApi, tagsApi } from '../api'
+import { articleApi, categoryApi, directoryApi, tagsApi, websiteApi } from '../api'
 import MarkdownIt from 'markdown-it'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
@@ -23,6 +23,15 @@ const category = ref<any>(null)
 const directory = ref<any>(null)
 const tags = ref<any[]>([])
 const loading = ref(false)
+
+const cdnUrl = ref('')
+
+function getFullUrl(path: string) {
+  if (!path) return ''
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  if (!cdnUrl.value) return path
+  return cdnUrl.value.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '')
+}
 
 const latestArticles = ref<any[]>([])
 const categories = ref<any[]>([])
@@ -134,6 +143,7 @@ function addCopyButtons() {
 onMounted(() => {
   loadArticle()
   loadSidebarData()
+  websiteApi.get().then(res => { cdnUrl.value = res.data.data?.cdn_url || '' }).catch(() => {})
 })
 
 watch(() => route.params.id, () => {
@@ -146,33 +156,6 @@ watch(() => route.params.id, () => {
   <n-spin :show="loading">
     <n-empty v-if="!loading && !article" description="文章不存在" />
     <div v-else-if="article" class="article-layout">
-      <div class="article-main">
-        <div class="article-container">
-          <div class="article-header">
-            <div class="article-meta">
-              <n-space>
-                <n-tag v-if="category" type="primary" @click="goToCategory(category.id)" class="clickable-tag">{{ category.name }}</n-tag>
-                <n-tag v-if="directory" type="info">{{ directory.name }}</n-tag>
-                <n-tag v-for="tag in tags" :key="tag.id" type="warning" @click="goToTag(tag.id)" class="clickable-tag">{{ tag.name }}</n-tag>
-              </n-space>
-            </div>
-            <h1 class="article-title">{{ article.title }}</h1>
-            <div class="article-info">
-              <span v-if="article.author">作者: {{ article.author }}</span>
-              <span>发布时间: {{ formatDate(article.create_time) }}</span>
-              <span>阅读: {{ article.weight }}</span>
-            </div>
-          </div>
-          <div class="article-cover" v-if="article.thumb">
-            <img :src="article.thumb" :alt="article.title" />
-          </div>
-          <div class="markdown-content" v-html="renderedContent"></div>
-          <div class="article-footer">
-            <n-button @click="router.push('/')">返回首页</n-button>
-          </div>
-        </div>
-      </div>
-      
       <aside class="sidebar">
         <div class="sidebar-section" v-if="category">
           <h3 class="section-title">{{ category.name }} - 目录</h3>
@@ -237,6 +220,30 @@ watch(() => route.params.id, () => {
           </div>
         </div>
       </aside>
+      
+      <div class="article-main">
+        <div class="article-container">
+          <div class="article-header">
+            <div class="article-meta">
+              <n-space>
+                <n-tag v-if="category" type="primary" @click="goToCategory(category.id)" class="clickable-tag">{{ category.name }}</n-tag>
+                <n-tag v-if="directory" type="info">{{ directory.name }}</n-tag>
+                <n-tag v-for="tag in tags" :key="tag.id" type="warning" @click="goToTag(tag.id)" class="clickable-tag">{{ tag.name }}</n-tag>
+              </n-space>
+            </div>
+            <h1 class="article-title">{{ article.title }}</h1>
+            <div class="article-info">
+              <span v-if="article.author">作者: {{ article.author }}</span>
+              <span>发布时间: {{ formatDate(article.create_time) }}</span>
+              <span>阅读: {{ article.weight }}</span>
+            </div>
+          </div>
+          <div class="markdown-content" v-html="renderedContent"></div>
+          <div class="article-footer">
+            <n-button @click="router.push('/')">返回首页</n-button>
+          </div>
+        </div>
+      </div>
     </div>
   </n-spin>
 </template>

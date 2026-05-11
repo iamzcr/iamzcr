@@ -57,7 +57,7 @@ func findProjectRoot() (string, error) {
 }
 
 func (c *Config) AssetDir() string {
-	return filepath.Join(c.ProjectRoot, "asset")
+	return filepath.Join(c.ProjectRoot, "cdn", "asset")
 }
 
 func getEnv(key, defaultValue string) string {
