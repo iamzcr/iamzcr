@@ -1,16 +1,16 @@
 package admin
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"iamzcr/models"
 	"iamzcr/pkg/md2wechat"
-	"log"
+	"io"
+	"net/http"
 	"time"
-
-	"github.com/ArtisanCloud/PowerWeChat/v3/src/officialAccount"
-	publishReq "github.com/ArtisanCloud/PowerWeChat/v3/src/officialAccount/publish/request"
 )
 
 type WeChatService struct{}
@@ -19,79 +19,91 @@ func NewWeChatService() *WeChatService {
 	return &WeChatService{}
 }
 
-func (s *WeChatService) getClient() (*officialAccount.OfficialAccount, string, error) {
+func (s *WeChatService) readSettings() (appID, appSecret, cdnURL string, err error) {
 	var websites []models.Website
 	if err := models.DB.Find(&websites).Error; err != nil {
-		return nil, "", errors.New("无法读取网站配置")
+		return "", "", "", errors.New("无法读取网站配置")
 	}
-
 	settings := make(map[string]string)
 	for _, w := range websites {
 		settings[w.Key] = w.Value
 	}
-
-	appID := settings["wechat_app_id"]
-	appSecret := settings["wechat_app_secret"]
-
+	appID = settings["wechat_app_id"]
+	appSecret = settings["wechat_app_secret"]
 	if appID == "" || appSecret == "" {
-		return nil, "", errors.New("微信公众号配置不完整，请先在基础设置中配置 AppID 和 AppSecret")
+		return "", "", "", errors.New("微信公众号配置不完整，请先在基础设置中配置 AppID 和 AppSecret")
 	}
-
-	log.Println("[WeChat] NewOfficialAccount with appID:", appID)
-	app, err := officialAccount.NewOfficialAccount(&officialAccount.UserConfig{
-		AppID:  appID,
-		Secret: appSecret,
-	})
-	if err != nil {
-		return nil, "", errors.New("微信公众号初始化失败: " + err.Error())
-	}
-	log.Println("[WeChat] NewOfficialAccount OK, app.Publish:", app.Publish)
-
-	return app, settings["cdn_url"], nil
+	return appID, appSecret, settings["cdn_url"], nil
 }
 
-func (s *WeChatService) PublishDraft(article *models.Article) (mediaRecord *models.ArticleMedia, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("微信公众号发布异常: %v", r)
-		}
-	}()
+func (s *WeChatService) getAccessToken(appID, appSecret string) (string, error) {
+	url := fmt.Sprintf("https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=%s&secret=%s", appID, appSecret)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-	log.Println("[WeChat] Step 1: getClient...")
-	app, cdnURL, err := s.getClient()
+	req, _ := http.NewRequestWithContext(ctx, "GET", url, nil)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("获取access_token失败: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	var result struct {
+		AccessToken string `json:"access_token"`
+		Errcode     int    `json:"errcode"`
+		Errmsg      string `json:"errmsg"`
+	}
+	json.Unmarshal(body, &result)
+	if result.AccessToken == "" {
+		return "", fmt.Errorf("获取access_token失败: %s", string(body))
+	}
+	return result.AccessToken, nil
+}
+
+func (s *WeChatService) PublishDraft(article *models.Article) (*models.ArticleMedia, error) {
+	appID, appSecret, cdnURL, err := s.readSettings()
 	if err != nil {
 		return nil, err
 	}
-	log.Println("[WeChat] Step 1: OK")
 
 	if article.Content == "" {
 		return nil, errors.New("文章内容为空")
 	}
 
-	log.Println("[WeChat] Step 2: md2wechat.Convert...")
 	htmlContent, err := md2wechat.Convert(article.Content, cdnURL)
 	if err != nil {
 		return nil, err
 	}
-	log.Println("[WeChat] Step 2: OK")
 
-	log.Println("[WeChat] Step 3: DraftAdd...")
-	req := &publishReq.RequestDraftAdd{
-		Articles: []*publishReq.Article{
+	token, err := s.getAccessToken(appID, appSecret)
+	if err != nil {
+		return nil, err
+	}
+
+	draft := map[string]interface{}{
+		"articles": []map[string]interface{}{
 			{
-				Title:   article.Title,
-				Author:  article.Author,
-				Digest:  truncate(article.Desc, 120),
-				Content: htmlContent,
+				"title":              article.Title,
+				"author":             article.Author,
+				"digest":             truncate(article.Desc, 120),
+				"content":            htmlContent,
+				"content_source_url": "",
+				"need_open_comment":  0,
+				"only_fans_can_comment": 0,
 			},
 		},
 	}
 
+	body, _ := json.Marshal(draft)
+	url := fmt.Sprintf("https://api.weixin.qq.com/cgi-bin/draft/add?access_token=%s", token)
+
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	result, err := app.Publish.DraftAdd(ctx, req)
-	log.Println("[WeChat] Step 3: done, err=", err)
+	req, _ := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return &models.ArticleMedia{
 			Aid:        article.ID,
@@ -102,9 +114,26 @@ func (s *WeChatService) PublishDraft(article *models.Article) (mediaRecord *mode
 			UpdateTime: int(time.Now().Unix()),
 		}, err
 	}
+	defer resp.Body.Close()
 
-	if result == nil {
-		return nil, errors.New("微信公众号返回空响应")
+	respBody, _ := io.ReadAll(resp.Body)
+	var result struct {
+		MediaID string `json:"media_id"`
+		Errcode int    `json:"errcode"`
+		Errmsg  string `json:"errmsg"`
+	}
+	json.Unmarshal(respBody, &result)
+
+	if result.MediaID == "" {
+		errMsg := fmt.Sprintf("发布失败: %s", string(respBody))
+		return &models.ArticleMedia{
+			Aid:        article.ID,
+			Platform:   "wechat",
+			Status:     2,
+			ErrorMsg:   errMsg,
+			CreateTime: int(time.Now().Unix()),
+			UpdateTime: int(time.Now().Unix()),
+		}, errors.New(errMsg)
 	}
 
 	return &models.ArticleMedia{
