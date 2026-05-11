@@ -77,11 +77,16 @@ func (h *ArticleMediaHandler) PublishToMedia(c *gin.Context) {
 					existingRecord.Status = mediaRecord.Status
 					existingRecord.ErrorMsg = mediaRecord.ErrorMsg
 					existingRecord.UpdateTime = mediaRecord.UpdateTime
-					h.articleMediaSvc.Update(existingRecord)
+					if updateErr := h.articleMediaSvc.Update(existingRecord); updateErr != nil {
+						publishError = updateErr.Error()
+					}
 					results = append(results, existingRecord)
 				} else {
-					h.articleMediaSvc.Create(mediaRecord)
-					results = append(results, mediaRecord)
+					if createErr := h.articleMediaSvc.Create(mediaRecord); createErr != nil {
+						publishError = createErr.Error()
+					} else {
+						results = append(results, mediaRecord)
+					}
 				}
 			}
 		}
@@ -91,7 +96,7 @@ func (h *ArticleMediaHandler) PublishToMedia(c *gin.Context) {
 		"records": results,
 	}
 	if publishError != "" {
-		responseData["wechat_publish_error"] = publishError
+		responseData["error"] = publishError
 	}
 
 	c.JSON(http.StatusOK, gin.H{

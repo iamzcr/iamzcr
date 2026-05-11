@@ -87,6 +87,10 @@ func (s *WeChatService) PublishDraft(article *models.Article) (*models.ArticleMe
 		}, err
 	}
 
+	if result == nil {
+		return nil, errors.New("微信公众号返回空响应")
+	}
+
 	return &models.ArticleMedia{
 		Aid:        article.ID,
 		Platform:   "wechat",
