@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"iamzcr/models"
 	"iamzcr/pkg/md2wechat"
+	"log"
 	"time"
 
 	"github.com/ArtisanCloud/PowerWeChat/v3/src/officialAccount"
@@ -36,6 +37,7 @@ func (s *WeChatService) getClient() (*officialAccount.OfficialAccount, string, e
 		return nil, "", errors.New("微信公众号配置不完整，请先在基础设置中配置 AppID 和 AppSecret")
 	}
 
+	log.Println("[WeChat] NewOfficialAccount with appID:", appID)
 	app, err := officialAccount.NewOfficialAccount(&officialAccount.UserConfig{
 		AppID:  appID,
 		Secret: appSecret,
@@ -43,6 +45,7 @@ func (s *WeChatService) getClient() (*officialAccount.OfficialAccount, string, e
 	if err != nil {
 		return nil, "", errors.New("微信公众号初始化失败: " + err.Error())
 	}
+	log.Println("[WeChat] NewOfficialAccount OK, app.Publish:", app.Publish)
 
 	return app, settings["cdn_url"], nil
 }
@@ -54,20 +57,25 @@ func (s *WeChatService) PublishDraft(article *models.Article) (mediaRecord *mode
 		}
 	}()
 
+	log.Println("[WeChat] Step 1: getClient...")
 	app, cdnURL, err := s.getClient()
 	if err != nil {
 		return nil, err
 	}
+	log.Println("[WeChat] Step 1: OK")
 
 	if article.Content == "" {
 		return nil, errors.New("文章内容为空")
 	}
 
+	log.Println("[WeChat] Step 2: md2wechat.Convert...")
 	htmlContent, err := md2wechat.Convert(article.Content, cdnURL)
 	if err != nil {
 		return nil, err
 	}
+	log.Println("[WeChat] Step 2: OK")
 
+	log.Println("[WeChat] Step 3: DraftAdd...")
 	req := &publishReq.RequestDraftAdd{
 		Articles: []*publishReq.Article{
 			{
@@ -83,6 +91,7 @@ func (s *WeChatService) PublishDraft(article *models.Article) (mediaRecord *mode
 	defer cancel()
 
 	result, err := app.Publish.DraftAdd(ctx, req)
+	log.Println("[WeChat] Step 3: done, err=", err)
 	if err != nil {
 		return &models.ArticleMedia{
 			Aid:        article.ID,
