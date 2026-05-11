@@ -1,8 +1,10 @@
 package admin
 
 import (
+	"fmt"
 	"iamzcr/models"
 	svc "iamzcr/services/admin"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -44,6 +46,13 @@ func (h *ArticleMediaHandler) ListMedia(c *gin.Context) {
 }
 
 func (h *ArticleMediaHandler) PublishToMedia(c *gin.Context) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("PublishToMedia panic: %v", r)
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": fmt.Sprintf("服务器内部错误: %v", r)})
+		}
+	}()
+
 	id, _ := strconv.Atoi(c.Param("id"))
 
 	var input struct {

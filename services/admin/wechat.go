@@ -3,6 +3,7 @@ package admin
 import (
 	"context"
 	"errors"
+	"fmt"
 	"iamzcr/models"
 	"iamzcr/pkg/md2wechat"
 	"time"
@@ -46,7 +47,13 @@ func (s *WeChatService) getClient() (*officialAccount.OfficialAccount, string, e
 	return app, settings["cdn_url"], nil
 }
 
-func (s *WeChatService) PublishDraft(article *models.Article) (*models.ArticleMedia, error) {
+func (s *WeChatService) PublishDraft(article *models.Article) (mediaRecord *models.ArticleMedia, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("微信公众号发布异常: %v", r)
+		}
+	}()
+
 	app, cdnURL, err := s.getClient()
 	if err != nil {
 		return nil, err
