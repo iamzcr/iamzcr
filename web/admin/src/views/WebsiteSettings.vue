@@ -48,6 +48,32 @@ function openEdit(row?: any) {
   showModal.value = true
 }
 
+function getKeyPlaceholder(key: string) {
+  const hints: Record<string, string> = {
+    wechat_app_id: '微信公众号 AppID',
+    wechat_app_secret: '微信公众号 AppSecret',
+    wechat_token: '微信公众号 Token (服务器配置)',
+    wechat_aes_key: '微信公众号 EncodingAESKey',
+    wechat_original_id: '微信公众号原始ID',
+    cdn_url: 'CDN/资源访问域名',
+    site_title: '网站标题'
+  }
+  return hints[key] || '例如 cdn_url, site_title, wechat_app_id'
+}
+
+function getValuePlaceholder(key: string) {
+  const hints: Record<string, string> = {
+    wechat_app_id: 'wx... 开头的 AppID',
+    wechat_app_secret: 'AppSecret 密钥',
+    wechat_token: 'Token 需与微信后台配置一致',
+    wechat_aes_key: '43位随机字符串',
+    wechat_original_id: 'gh_ 开头的原始ID',
+    cdn_url: 'https://cdn.example.com',
+    site_title: '堆栈人生'
+  }
+  return hints[key] || '请输入值'
+}
+
 async function saveSetting() {
   if (!editingSetting.value.key) {
     message.error('请输入Key')
@@ -71,17 +97,20 @@ onMounted(loadSettings)
 
 <template>
   <div>
-    <div style="margin-bottom: 16px; display: flex; justify-content: flex-end;">
+    <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+      <div style="color: #666; font-size: 13px;">
+        微信公众号配置 Key: wechat_app_id, wechat_app_secret, wechat_token, wechat_aes_key, wechat_original_id
+      </div>
       <n-button type="primary" @click="openEdit()">新建配置</n-button>
     </div>
     <n-data-table :columns="columns" :data="websites" :loading="loading" />
     <n-modal v-model:show="showModal" preset="card" title="网站设置" style="width: 500px">
       <n-form :model="editingSetting">
         <n-form-item label="Key">
-          <n-input v-model:value="editingSetting.key" :disabled="!!editingSetting.id" placeholder="例如 cdn_url, site_title" />
+          <n-input v-model:value="editingSetting.key" :disabled="!!editingSetting.id" :placeholder="getKeyPlaceholder(editingSetting.key)" />
         </n-form-item>
         <n-form-item label="Value">
-          <n-input v-model:value="editingSetting.value" placeholder="请输入值" />
+          <n-input v-model:value="editingSetting.value" :placeholder="getValuePlaceholder(editingSetting.key)" />
         </n-form-item>
       </n-form>
       <template #footer>

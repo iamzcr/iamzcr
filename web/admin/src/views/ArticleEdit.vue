@@ -25,7 +25,8 @@ const form = ref({
   public_time: 0,
   status: 1,
   month: '',
-  tag_ids: [] as number[]
+  tag_ids: [] as number[],
+  publish_to_wechat: false
 })
 const loading = ref(false)
 
@@ -79,7 +80,8 @@ async function loadArticle() {
       public_time: data.article?.public_time || data.public_time || 0,
       status: data.article?.status || data.status || 1,
       month: data.article?.month || data.month || '',
-      tag_ids: data.tags ? data.tags.map((t: any) => t.id) : []
+      tag_ids: data.tags ? data.tags.map((t: any) => t.id) : [],
+      publish_to_wechat: false
     }
   }
 }
@@ -203,6 +205,11 @@ onMounted(() => {
           </n-switch>
           <span class="prop-label">权重</span>
           <n-input-number v-model:value="form.weight" :min="0" :show-button="false" placeholder="权重" style="width: 80px" />
+          <span class="prop-label">发布到微信公众号</span>
+          <n-switch v-model:value="form.publish_to_wechat">
+            <template #checked>是</template>
+            <template #unchecked>否</template>
+          </n-switch>
         </n-space>
       </n-form-item>
       </div>

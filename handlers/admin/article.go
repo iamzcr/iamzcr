@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"iamzcr/models"
 	svc "iamzcr/services/admin"
 	"net/http"
 	"strconv"
@@ -11,12 +12,14 @@ import (
 type AdminHandler struct {
 	articleSvc *svc.ArticleService
 	adminSvc   *svc.AdminService
+	wechatSvc  *svc.WeChatService
 }
 
-func NewAdminHandler(articleSvc *svc.ArticleService, adminSvc *svc.AdminService) *AdminHandler {
+func NewAdminHandler(articleSvc *svc.ArticleService, adminSvc *svc.AdminService, wechatSvc *svc.WeChatService) *AdminHandler {
 	return &AdminHandler{
 		articleSvc: articleSvc,
 		adminSvc:   adminSvc,
+		wechatSvc:  wechatSvc,
 	}
 }
 
@@ -120,12 +123,26 @@ func (h *AdminHandler) CreateArticle(c *gin.Context) {
 		}
 	}
 
+	publishToWechat, _ := input["publish_to_wechat"].(bool)
+
 	article := h.articleSvc.Create(input, tagIDs)
+
+	responseData := gin.H{"article": article}
+
+	if publishToWechat && h.wechatSvc != nil {
+		mediaRecord, err := h.wechatSvc.PublishDraft(article)
+		if err != nil {
+			responseData["wechat_publish_error"] = err.Error()
+		}
+		if mediaRecord != nil {
+			models.DB.Create(mediaRecord)
+		}
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
 		"message": "success",
-		"data":    article,
+		"data":    responseData,
 	})
 }
 
@@ -147,6 +164,8 @@ func (h *AdminHandler) UpdateArticle(c *gin.Context) {
 		}
 	}
 
+	publishToWechat, _ := input["publish_to_wechat"].(bool)
+
 	article := h.articleSvc.Update(id, input, tagIDs)
 
 	if article == nil {
@@ -154,10 +173,32 @@ func (h *AdminHandler) UpdateArticle(c *gin.Context) {
 		return
 	}
 
+	responseData := gin.H{"article": article}
+
+	if publishToWechat && h.wechatSvc != nil {
+		mediaRecord, err := h.wechatSvc.PublishDraft(article)
+		if err != nil {
+			responseData["wechat_publish_error"] = err.Error()
+		}
+		if mediaRecord != nil {
+			var existing models.ArticleMedia
+			result := models.DB.Where("aid = ? AND platform = ?", id, "wechat").First(&existing)
+			if result.Error == nil && existing.ID > 0 {
+				existing.MediaID = mediaRecord.MediaID
+				existing.Status = mediaRecord.Status
+				existing.ErrorMsg = mediaRecord.ErrorMsg
+				existing.UpdateTime = mediaRecord.UpdateTime
+				models.DB.Save(&existing)
+			} else {
+				models.DB.Create(mediaRecord)
+			}
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
 		"message": "success",
-		"data":    article,
+		"data":    responseData,
 	})
 }
 

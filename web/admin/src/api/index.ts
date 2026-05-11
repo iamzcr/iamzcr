@@ -36,7 +36,9 @@ export const articleApi = {
   get: (id: number) => api.get(`/articles/${id}`),
   create: (data: any) => api.post('/articles', data),
   update: (id: number, data: any) => api.put(`/articles/${id}`, data),
-  delete: (id: number) => api.delete(`/articles/${id}`)
+  delete: (id: number) => api.delete(`/articles/${id}`),
+  getMedia: (id: number) => api.get(`/articles/${id}/media`),
+  publishToMedia: (id: number, platforms: string[]) => api.post(`/articles/${id}/media/publish`, { platforms })
 }
 
 export const categoryApi = {

@@ -270,3 +270,19 @@ type Read struct {
 func (Read) TableName() string {
 	return "sl_read"
 }
+
+type ArticleMedia struct {
+	ID         int    `gorm:"primaryKey;column:id" json:"id"`
+	Aid        int    `gorm:"column:aid" json:"aid"`
+	Platform   string `gorm:"column:platform;size:32" json:"platform"`
+	MediaID    string `gorm:"column:media_id;size:255" json:"media_id"`
+	Status     int    `gorm:"column:status" json:"status"`
+	PublishURL string `gorm:"column:publish_url;size:500" json:"publish_url"`
+	ErrorMsg   string `gorm:"column:error_msg;type:text" json:"error_msg"`
+	CreateTime int    `gorm:"column:create_time" json:"create_time"`
+	UpdateTime int    `gorm:"column:update_time" json:"update_time"`
+}
+
+func (ArticleMedia) TableName() string {
+	return "sl_article_media"
+}
