@@ -9,6 +9,8 @@ const message = useMessage()
 
 const articles = ref<any[]>([])
 const loading = ref(false)
+const wechatStatusMap = ref<Record<number, boolean>>({})
+const publishingMap = ref<Record<number, boolean>>({})
 const pagination = ref({ page: 1, pageSize: 10, itemCount: 0 })
 
 function formatDate(time: number | string) {
@@ -28,11 +30,13 @@ const columns = [
   { title: '标题', key: 'title', ellipsis: { tooltip: true } },
   { title: '作者', key: 'author', width: 100 },
   { title: '状态', key: 'status', width: 80, render: (row: any) => h(NTag, { type: row.status === 1 ? 'success' : 'default', size: 'small' }, () => row.status === 1 ? '已发布' : '草稿') },
+  { title: '微信', key: 'wechat', width: 90, render: (row: any) => h(NTag, { type: wechatStatusMap.value[row.id] ? 'success' : 'default', size: 'small' }, () => wechatStatusMap.value[row.id] ? '已发布' : '未发布') },
   { title: '热门', key: 'is_hot', width: 60, render: (row: any) => h(NTag, { type: row.is_hot === 1 ? 'error' : 'default', size: 'small' }, () => row.is_hot === 1 ? '是' : '否') },
   { title: '权重', key: 'weight', width: 60 },
   { title: '创建时间', key: 'create_time', width: 180, render: (row: any) => formatDate(row.create_time) },
-  { title: '操作', key: 'actions', width: 150, render: (row: any) => h(NSpace, () => [
+  { title: '操作', key: 'actions', width: 220, render: (row: any) => h(NSpace, () => [
     h(NButton, { size: 'small', onClick: () => router.push(`/articles/edit/${row.id}`) }, () => '编辑'),
+    h(NButton, { size: 'small', type: 'info', loading: publishingMap.value[row.id], onClick: () => publishToWechat(row.id) }, () => '发布'),
     h(NButton, { size: 'small', type: 'error', onClick: () => deleteArticle(row.id) }, () => '删除')
   ])}
 ]
@@ -43,8 +47,34 @@ async function loadArticles() {
     const res = await articleApi.list({ page: pagination.value.page, page_size: pagination.value.pageSize })
     articles.value = res.data.data.list
     pagination.value.itemCount = res.data.data.total
+    loadWechatStatus()
   } finally {
     loading.value = false
+  }
+}
+
+async function loadWechatStatus() {
+  for (const article of articles.value) {
+    try {
+      const res = await articleApi.getMedia(article.id)
+      const records = res.data.data || []
+      wechatStatusMap.value[article.id] = records.some((r: any) => r.platform === 'wechat' && r.status === 1)
+    } catch {
+      wechatStatusMap.value[article.id] = false
+    }
+  }
+}
+
+async function publishToWechat(id: number) {
+  publishingMap.value[id] = true
+  try {
+    await articleApi.publishToMedia(id, ['wechat'])
+    message.success('发布成功')
+    wechatStatusMap.value[id] = true
+  } catch (e: any) {
+    message.error(e.response?.data?.message || '发布失败')
+  } finally {
+    publishingMap.value[id] = false
   }
 }
 

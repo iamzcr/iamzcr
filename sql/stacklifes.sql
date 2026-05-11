@@ -7545,3 +7545,21 @@ CREATE TABLE `sl_website` (
 -- Records of sl_website
 -- ----------------------------
 INSERT INTO `sl_website` VALUES ('4', '关键词', 'keyword', '堆栈，博客', '1', '0', '0');
+
+-- ----------------------------
+-- Table structure for sl_article_media
+-- ----------------------------
+DROP TABLE IF EXISTS `sl_article_media`;
+CREATE TABLE `sl_article_media` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `aid` int(11) NOT NULL COMMENT '文章ID',
+  `platform` varchar(32) NOT NULL COMMENT '平台标识: wechat, bilibili, xiaohongshu',
+  `media_id` varchar(255) DEFAULT NULL COMMENT '第三方平台的素材/文章ID',
+  `status` tinyint(4) DEFAULT '0' COMMENT '发布状态: 0=待发布, 1=已发布, 2=失败',
+  `publish_url` varchar(500) DEFAULT NULL COMMENT '发布后的URL',
+  `error_msg` text COMMENT '失败时的错误信息',
+  `create_time` int(11) DEFAULT NULL,
+  `update_time` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_article_platform` (`aid`, `platform`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='文章发布到第三方媒体状态表';
