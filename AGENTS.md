@@ -18,11 +18,7 @@ The Vue SPAs proxy `/api` to their respective Go backend via Vite dev server con
 ## Development commands
 
 ```bash
-# Go hot reload (requires `go install github.com/air-verse/air@latest`)
-air -c .air_admin.toml       # admin API with hot reload
-air -c .air_frontend.toml    # frontend API with hot reload
-
-# Go run without hot reload
+# Go run (use dev-start skill for all services)
 make run-admin               # port 8081
 make run-frontend            # port 8082
 make build                   # compile both binaries

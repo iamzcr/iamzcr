@@ -9,8 +9,8 @@ description: Start all project dev servers (Go backends + Vue frontends) and ope
 
 | Service | Port | Command | Dir |
 |---|---|---|---|
-| Admin API | 8081 | `air -c .air_admin.toml` | project root |
-| Frontend API | 8082 | `air -c .air_frontend.toml` | project root |
+| Admin API | 8081 | `go run ./cmd/admin` | project root |
+| Frontend API | 8082 | `go run ./cmd/frontend` | project root |
 | Admin SPA | 3001 | `npm run dev` | `web/admin` |
 | Blog SPA | 3000 | `npm run dev` | `web/frontend` |
 
@@ -21,11 +21,11 @@ Execute this single PowerShell script (everything in ONE bash call — do NOT sp
 ```powershell
 $pids = @()
 
-$proc = Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$PWD'; air -c .air_admin.toml" -WindowStyle Minimized -PassThru
+$proc = Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$PWD'; go run ./cmd/admin" -WindowStyle Minimized -PassThru
 $pids += $proc.Id
 Write-Host "Admin API (8081) PID: $($proc.Id)"
 
-$proc = Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$PWD'; air -c .air_frontend.toml" -WindowStyle Minimized -PassThru
+$proc = Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$PWD'; go run ./cmd/frontend" -WindowStyle Minimized -PassThru
 $pids += $proc.Id
 Write-Host "Frontend API (8082) PID: $($proc.Id)"
 
