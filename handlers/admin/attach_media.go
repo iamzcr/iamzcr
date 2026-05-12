@@ -62,8 +62,20 @@ func (h *AttachMediaHandler) Get(c *gin.Context) {
 	})
 }
 
-func (h *AttachMediaHandler) SyncToWechat(c *gin.Context) {
+func (h *AttachMediaHandler) SyncToMedia(c *gin.Context) {
 	id := parseInt(c.Param("id"))
+
+	var input struct {
+		PlatformID int `json:"platform_id"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": err.Error()})
+		return
+	}
+	if input.PlatformID == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "platform_id is required"})
+		return
+	}
 
 	attach, err := h.attachSvc.Get(id)
 	if err != nil {
@@ -71,14 +83,19 @@ func (h *AttachMediaHandler) SyncToWechat(c *gin.Context) {
 		return
 	}
 
-	mediaRecord, err := h.wechatSvc.UploadAttachMedia(attach)
+	existingRecord, _ := h.attachMediaSvc.GetByAttachAndPlatform(attach.ID, input.PlatformID)
+	if existingRecord != nil && existingRecord.Status == 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "该附件已成功同步到此平台，不允许重复同步"})
+		return
+	}
+
+	mediaRecord, err := h.wechatSvc.UploadAttachMedia(attach, input.PlatformID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
 		return
 	}
 
 	if mediaRecord != nil {
-		existingRecord, _ := h.attachMediaSvc.GetByAttachAndPlatform(attach.ID, mediaRecord.PlatformID)
 		if existingRecord != nil && existingRecord.ID > 0 {
 			existingRecord.MediaID = mediaRecord.MediaID
 			existingRecord.MediaURL = mediaRecord.MediaURL

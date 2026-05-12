@@ -93,7 +93,8 @@ export const attachApi = {
   get: (id: number) => api.get(`/attaches/${id}`),
   create: (data: any) => api.post('/attaches', data),
   update: (id: number, data: any) => api.put(`/attaches/${id}`, data),
-  delete: (id: number) => api.delete(`/attaches/${id}`),
+  delete: (id: number, params?: any) => api.delete(`/attaches/${id}`, { params }),
+  getMedia: (id: number) => api.get(`/attaches/${id}/media`),
   upload: (file: File) => {
     const formData = new FormData()
     formData.append('file', file)
@@ -168,6 +169,6 @@ export const platformApi = {
 export const attachMediaApi = {
   list: (params?: any) => api.get('/attach_media', { params }),
   get: (id: number) => api.get(`/attach_media/${id}`),
-  syncToWechat: (attachId: number) => api.post(`/attaches/${attachId}/sync_wechat`),
+  syncToMedia: (attachId: number, platform_id: number) => api.post(`/attaches/${attachId}/sync_media`, { platform_id }),
   delete: (id: number) => api.delete(`/attach_media/${id}`)
 }

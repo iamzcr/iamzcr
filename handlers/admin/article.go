@@ -123,19 +123,35 @@ func (h *AdminHandler) CreateArticle(c *gin.Context) {
 		}
 	}
 
-	publishToWechat, _ := input["publish_to_wechat"].(bool)
+	var publishPlatformIDs []int
+	if rawIDs, ok := input["publish_platform_ids"].([]interface{}); ok {
+		for _, pid := range rawIDs {
+			if id, ok := pid.(float64); ok {
+				publishPlatformIDs = append(publishPlatformIDs, int(id))
+			}
+		}
+	}
 
 	article := h.articleSvc.Create(input, tagIDs)
 
 	responseData := gin.H{"article": article}
 
-	if publishToWechat && h.wechatSvc != nil {
-		mediaRecord, err := h.wechatSvc.PublishDraft(article)
-		if err != nil {
-			responseData["wechat_publish_error"] = err.Error()
-		}
-		if mediaRecord != nil {
-			models.DB.Create(mediaRecord)
+	if len(publishPlatformIDs) > 0 && h.wechatSvc != nil {
+		for _, platformID := range publishPlatformIDs {
+			var platform models.Platform
+			if err := models.DB.First(&platform, platformID).Error; err != nil {
+				continue
+			}
+			switch platform.Mark {
+			case "wechat":
+				mediaRecord, err := h.wechatSvc.PublishDraft(article, platformID)
+				if err != nil {
+					responseData["publish_error"] = err.Error()
+				}
+				if mediaRecord != nil {
+					models.DB.Create(mediaRecord)
+				}
+			}
 		}
 	}
 
@@ -164,7 +180,14 @@ func (h *AdminHandler) UpdateArticle(c *gin.Context) {
 		}
 	}
 
-	publishToWechat, _ := input["publish_to_wechat"].(bool)
+	var publishPlatformIDs []int
+	if rawIDs, ok := input["publish_platform_ids"].([]interface{}); ok {
+		for _, pid := range rawIDs {
+			if id, ok := pid.(float64); ok {
+				publishPlatformIDs = append(publishPlatformIDs, int(id))
+			}
+		}
+	}
 
 	article := h.articleSvc.Update(id, input, tagIDs)
 
@@ -175,27 +198,31 @@ func (h *AdminHandler) UpdateArticle(c *gin.Context) {
 
 	responseData := gin.H{"article": article}
 
-	if publishToWechat && h.wechatSvc != nil {
-		mediaRecord, err := h.wechatSvc.PublishDraft(article)
-		if err != nil {
-			responseData["wechat_publish_error"] = err.Error()
-		}
-		if mediaRecord != nil {
+	if len(publishPlatformIDs) > 0 && h.wechatSvc != nil {
+		for _, platformID := range publishPlatformIDs {
 			var platform models.Platform
-			var existing models.ArticleMedia
-			if dbErr := models.DB.Where("mark = ?", "wechat").First(&platform).Error; dbErr == nil {
-				result := models.DB.Where("aid = ? AND platform_id = ?", id, platform.ID).First(&existing)
-				if result.Error == nil && existing.ID > 0 {
-					existing.MediaID = mediaRecord.MediaID
-					existing.Status = mediaRecord.Status
-					existing.ErrorMsg = mediaRecord.ErrorMsg
-					existing.UpdateTime = mediaRecord.UpdateTime
-					models.DB.Save(&existing)
-				} else {
-					models.DB.Create(mediaRecord)
+			if err := models.DB.First(&platform, platformID).Error; err != nil {
+				continue
+			}
+			switch platform.Mark {
+			case "wechat":
+				mediaRecord, err := h.wechatSvc.PublishDraft(article, platformID)
+				if err != nil {
+					responseData["publish_error"] = err.Error()
 				}
-			} else {
-				models.DB.Create(mediaRecord)
+				if mediaRecord != nil {
+					var existing models.ArticleMedia
+					result := models.DB.Where("aid = ? AND platform_id = ?", id, platformID).First(&existing)
+					if result.Error == nil && existing.ID > 0 {
+						existing.MediaID = mediaRecord.MediaID
+						existing.Status = mediaRecord.Status
+						existing.ErrorMsg = mediaRecord.ErrorMsg
+						existing.UpdateTime = mediaRecord.UpdateTime
+						models.DB.Save(&existing)
+					} else {
+						models.DB.Create(mediaRecord)
+					}
+				}
 			}
 		}
 	}

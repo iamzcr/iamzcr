@@ -1,21 +1,26 @@
 package admin
 
 import (
+	"context"
 	"iamzcr/config"
 	"iamzcr/models"
 	svc "iamzcr/services/admin"
+	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
 type AttachHandler struct {
-	svc *svc.AttachService
+	svc           *svc.AttachService
+	attachMediaSvc *svc.AttachMediaService
+	wechatSvc     *svc.WeChatService
 }
 
-func NewAttachHandler(s *svc.AttachService) *AttachHandler {
-	return &AttachHandler{svc: s}
+func NewAttachHandler(s *svc.AttachService, attachMediaSvc *svc.AttachMediaService, wechatSvc *svc.WeChatService) *AttachHandler {
+	return &AttachHandler{svc: s, attachMediaSvc: attachMediaSvc, wechatSvc: wechatSvc}
 }
 
 func (h *AttachHandler) Upload(c *gin.Context) {
@@ -91,9 +96,64 @@ func (h *AttachHandler) Update(c *gin.Context) {
 
 func (h *AttachHandler) Delete(c *gin.Context) {
 	id := parseInt(c.Param("id"))
+
+	deleteMedia := c.Query("delete_media") == "true"
+
+	if deleteMedia {
+		mediaRecords, err := h.attachMediaSvc.ListByAttachID(id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": err.Error()})
+			return
+		}
+
+		for _, media := range mediaRecords {
+			var platform models.Platform
+			if dbErr := models.DB.First(&platform, media.PlatformID).Error; dbErr != nil {
+				log.Printf("Delete attach media: platform %d not found", media.PlatformID)
+				continue
+			}
+			if platform.Mark == "wechat" {
+				if media.MediaID == "" && media.MediaURL != "" {
+					log.Printf("Delete attach media: attach_id=%d media was uploaded as news_image, cannot delete from WeChat (no permanent media_id)", id)
+					continue
+				}
+				if media.MediaID != "" {
+					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+					if err := h.wechatSvc.DeleteMaterial(ctx, media.MediaID); err != nil {
+						log.Printf("Delete attach media: wechat delete material failed for attach_id=%d media_id=%s: %v", id, media.MediaID, err)
+					} else {
+						log.Printf("Delete attach media: wechat material deleted for attach_id=%d media_id=%s", id, media.MediaID)
+					}
+					cancel()
+				}
+			}
+		}
+
+		if err := h.attachMediaSvc.DeleteByAttachID(id); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": err.Error()})
+			return
+		}
+	}
+
 	if err := h.svc.Delete(id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "success"})
+}
+
+func (h *AttachHandler) GetMediaRecords(c *gin.Context) {
+	id := parseInt(c.Param("id"))
+
+	records, err := h.attachMediaSvc.ListByAttachID(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": err.Error()})
+		return
+	}
+
+	if records == nil {
+		records = []models.AttachMedia{}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "success", "data": records})
 }

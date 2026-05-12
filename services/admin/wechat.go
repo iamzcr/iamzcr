@@ -69,15 +69,7 @@ func (s *WeChatService) getApp() (*officialAccount.OfficialAccount, error) {
 	return s.app, nil
 }
 
-func (s *WeChatService) getPlatformID(mark string) (int, error) {
-	var platform models.Platform
-	if err := models.DB.Where("mark = ?", mark).First(&platform).Error; err != nil {
-		return 0, fmt.Errorf("platform %s not found", mark)
-	}
-	return platform.ID, nil
-}
-
-func (s *WeChatService) PublishDraft(article *models.Article) (*models.ArticleMedia, error) {
+func (s *WeChatService) PublishDraft(article *models.Article, platformID int) (*models.ArticleMedia, error) {
 	_, _, cdnURL, err := s.readSettings()
 	if err != nil {
 		return nil, err
@@ -93,11 +85,6 @@ func (s *WeChatService) PublishDraft(article *models.Article) (*models.ArticleMe
 	}
 
 	app, err := s.getApp()
-	if err != nil {
-		return nil, err
-	}
-
-	platformID, err := s.getPlatformID("wechat")
 	if err != nil {
 		return nil, err
 	}
@@ -153,13 +140,8 @@ func (s *WeChatService) PublishDraft(article *models.Article) (*models.ArticleMe
 	}, nil
 }
 
-func (s *WeChatService) UploadAttachMedia(attach *models.Attach) (*models.AttachMedia, error) {
+func (s *WeChatService) UploadAttachMedia(attach *models.Attach, platformID int) (*models.AttachMedia, error) {
 	app, err := s.getApp()
-	if err != nil {
-		return nil, err
-	}
-
-	platformID, err := s.getPlatformID("wechat")
 	if err != nil {
 		return nil, err
 	}
@@ -255,6 +237,15 @@ func (s *WeChatService) UploadAttachMedia(attach *models.Attach) (*models.Attach
 			UpdateTime: now,
 		}, nil
 	}
+}
+
+func (s *WeChatService) DeleteMaterial(ctx context.Context, mediaID string) error {
+	app, err := s.getApp()
+	if err != nil {
+		return err
+	}
+	_, err = app.Material.Delete(ctx, mediaID)
+	return err
 }
 
 func truncate(s string, maxLen int) string {

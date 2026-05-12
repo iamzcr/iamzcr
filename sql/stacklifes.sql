@@ -123,6 +123,7 @@ CREATE TABLE `sl_attach` (
   `path` varchar(255) DEFAULT NULL,
   `status` tinyint(4) DEFAULT NULL,
   `type` tinyint(4) DEFAULT NULL COMMENT '素材类型，1图片，2视频',
+  `is_thumb` tinyint(4) DEFAULT '0' COMMENT '是否封面图，1是，0否',
   `create_time` int(11) DEFAULT NULL,
   `update_time` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)

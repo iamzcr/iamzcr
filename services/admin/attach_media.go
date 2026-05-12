@@ -38,6 +38,16 @@ func (s *AttachMediaService) GetByAttachAndPlatform(attachID, platformID int) (*
 	return &record, nil
 }
 
+func (s *AttachMediaService) ListByAttachID(attachID int) ([]models.AttachMedia, error) {
+	var records []models.AttachMedia
+	err := models.DB.Where("attach_id = ?", attachID).Find(&records).Error
+	return records, err
+}
+
+func (s *AttachMediaService) DeleteByAttachID(attachID int) error {
+	return models.DB.Where("attach_id = ?", attachID).Delete(&models.AttachMedia{}).Error
+}
+
 func (s *AttachMediaService) Create(record *models.AttachMedia) error {
 	record.CreateTime = int(time.Now().Unix())
 	record.UpdateTime = int(time.Now().Unix())
