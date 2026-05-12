@@ -38,7 +38,7 @@ export const articleApi = {
   update: (id: number, data: any) => api.put(`/articles/${id}`, data),
   delete: (id: number) => api.delete(`/articles/${id}`),
   getMedia: (id: number) => api.get(`/articles/${id}/media`),
-  publishToMedia: (id: number, platforms: string[]) => api.post(`/articles/${id}/media/publish`, { platforms })
+  publishToMedia: (id: number, platform_ids: number[]) => api.post(`/articles/${id}/media/publish`, { platform_ids })
 }
 
 export const categoryApi = {
@@ -155,4 +155,19 @@ export const adminGroupApi = {
   create: (data: any) => api.post('/admin_groups', data),
   update: (id: number, data: any) => api.put(`/admin_groups/${id}`, data),
   delete: (id: number) => api.delete(`/admin_groups/${id}`)
+}
+
+export const platformApi = {
+  list: (params?: any) => api.get('/platforms', { params }),
+  get: (id: number) => api.get(`/platforms/${id}`),
+  create: (data: any) => api.post('/platforms', data),
+  update: (id: number, data: any) => api.put(`/platforms/${id}`, data),
+  delete: (id: number) => api.delete(`/platforms/${id}`)
+}
+
+export const attachMediaApi = {
+  list: (params?: any) => api.get('/attach_media', { params }),
+  get: (id: number) => api.get(`/attach_media/${id}`),
+  syncToWechat: (attachId: number) => api.post(`/attaches/${attachId}/sync_wechat`),
+  delete: (id: number) => api.delete(`/attach_media/${id}`)
 }

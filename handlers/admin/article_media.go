@@ -49,14 +49,14 @@ func (h *ArticleMediaHandler) PublishToMedia(c *gin.Context) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("PublishToMedia panic: %v", r)
-			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": fmt.Sprintf("服务器内部错误: %v", r)})
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": fmt.Sprintf("server error: %v", r)})
 		}
 	}()
 
 	id, _ := strconv.Atoi(c.Param("id"))
 
 	var input struct {
-		Platforms []string `json:"platforms"`
+		PlatformIDs []int `json:"platform_ids"`
 	}
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": err.Error()})
@@ -65,22 +65,28 @@ func (h *ArticleMediaHandler) PublishToMedia(c *gin.Context) {
 
 	article := h.articleSvc.Get(id)
 	if article == nil {
-		c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "文章不存在"})
+		c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "article not found"})
 		return
 	}
 
 	results := make([]interface{}, 0)
 	publishError := ""
 
-	for _, platform := range input.Platforms {
-		switch platform {
+	for _, platformID := range input.PlatformIDs {
+		var platform models.Platform
+		if err := models.DB.First(&platform, platformID).Error; err != nil {
+			publishError = fmt.Sprintf("platform %d not found", platformID)
+			continue
+		}
+
+		switch platform.Mark {
 		case "wechat":
 			mediaRecord, err := h.wechatSvc.PublishDraft(article)
 			if err != nil {
 				publishError = err.Error()
 			}
 			if mediaRecord != nil {
-				existingRecord, _ := h.articleMediaSvc.GetByArticleAndPlatform(id, "wechat")
+				existingRecord, _ := h.articleMediaSvc.GetByArticleAndPlatform(id, platformID)
 				if existingRecord != nil && existingRecord.ID > 0 {
 					existingRecord.MediaID = mediaRecord.MediaID
 					existingRecord.Status = mediaRecord.Status

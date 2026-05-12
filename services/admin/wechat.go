@@ -1,19 +1,23 @@
 package admin
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"iamzcr/models"
 	"iamzcr/pkg/md2wechat"
-	"io"
-	"net/http"
+	"path/filepath"
+	"sync"
 	"time"
+
+	"github.com/ArtisanCloud/PowerWeChat/v3/src/officialAccount"
+	publishRequest "github.com/ArtisanCloud/PowerWeChat/v3/src/officialAccount/publish/request"
 )
 
-type WeChatService struct{}
+type WeChatService struct {
+	mu   sync.Mutex
+	app  *officialAccount.OfficialAccount
+}
 
 func NewWeChatService() *WeChatService {
 	return &WeChatService{}
@@ -22,7 +26,7 @@ func NewWeChatService() *WeChatService {
 func (s *WeChatService) readSettings() (appID, appSecret, cdnURL string, err error) {
 	var websites []models.Website
 	if err := models.DB.Find(&websites).Error; err != nil {
-		return "", "", "", errors.New("无法读取网站配置")
+		return "", "", "", errors.New("unable to read website config")
 	}
 	settings := make(map[string]string)
 	for _, w := range websites {
@@ -31,44 +35,56 @@ func (s *WeChatService) readSettings() (appID, appSecret, cdnURL string, err err
 	appID = settings["wechat_app_id"]
 	appSecret = settings["wechat_app_secret"]
 	if appID == "" || appSecret == "" {
-		return "", "", "", errors.New("微信公众号配置不完整，请先在基础设置中配置 AppID 和 AppSecret")
+		return "", "", "", errors.New("wechat config incomplete")
 	}
 	return appID, appSecret, settings["cdn_url"], nil
 }
 
-func (s *WeChatService) getAccessToken(appID, appSecret string) (string, error) {
-	url := fmt.Sprintf("https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=%s&secret=%s", appID, appSecret)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+func (s *WeChatService) getApp() (*officialAccount.OfficialAccount, error) {
+	if s.app != nil {
+		return s.app, nil
+	}
 
-	req, _ := http.NewRequestWithContext(ctx, "GET", url, nil)
-	resp, err := http.DefaultClient.Do(req)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.app != nil {
+		return s.app, nil
+	}
+
+	appID, appSecret, _, err := s.readSettings()
 	if err != nil {
-		return "", fmt.Errorf("获取access_token失败: %v", err)
+		return nil, err
 	}
-	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
-	var result struct {
-		AccessToken string `json:"access_token"`
-		Errcode     int    `json:"errcode"`
-		Errmsg      string `json:"errmsg"`
+	app, err := officialAccount.NewOfficialAccount(&officialAccount.UserConfig{
+		AppID:  appID,
+		Secret: appSecret,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("init wechat client failed: %v", err)
 	}
-	json.Unmarshal(body, &result)
-	if result.AccessToken == "" {
-		return "", fmt.Errorf("获取access_token失败: %s", string(body))
+
+	s.app = app
+	return s.app, nil
+}
+
+func (s *WeChatService) getPlatformID(mark string) (int, error) {
+	var platform models.Platform
+	if err := models.DB.Where("mark = ?", mark).First(&platform).Error; err != nil {
+		return 0, fmt.Errorf("platform %s not found", mark)
 	}
-	return result.AccessToken, nil
+	return platform.ID, nil
 }
 
 func (s *WeChatService) PublishDraft(article *models.Article) (*models.ArticleMedia, error) {
-	appID, appSecret, cdnURL, err := s.readSettings()
+	_, _, cdnURL, err := s.readSettings()
 	if err != nil {
 		return nil, err
 	}
 
 	if article.Content == "" {
-		return nil, errors.New("文章内容为空")
+		return nil, errors.New("article content is empty")
 	}
 
 	htmlContent, err := md2wechat.Convert(article.Content, cdnURL)
@@ -76,59 +92,50 @@ func (s *WeChatService) PublishDraft(article *models.Article) (*models.ArticleMe
 		return nil, err
 	}
 
-	token, err := s.getAccessToken(appID, appSecret)
+	app, err := s.getApp()
 	if err != nil {
 		return nil, err
 	}
 
-	draft := map[string]interface{}{
-		"articles": []map[string]interface{}{
-			{
-				"title":              article.Title,
-				"author":             article.Author,
-				"digest":             truncate(article.Desc, 120),
-				"content":            htmlContent,
-				"content_source_url": "",
-				"need_open_comment":  0,
-				"only_fans_can_comment": 0,
-			},
-		},
+	platformID, err := s.getPlatformID("wechat")
+	if err != nil {
+		return nil, err
 	}
-
-	body, _ := json.Marshal(draft)
-	url := fmt.Sprintf("https://api.weixin.qq.com/cgi-bin/draft/add?access_token=%s", token)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	req, _ := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := http.DefaultClient.Do(req)
+	draftReq := &publishRequest.RequestDraftAdd{
+		Articles: []*publishRequest.Article{
+			{
+				Title:              article.Title,
+				Author:             article.Author,
+				Digest:             truncate(article.Desc, 120),
+				Content:            htmlContent,
+				ContentSourceUrl:   "",
+				NeedOpenComment:    0,
+				OnlyFansCanComment: 0,
+			},
+		},
+	}
+
+	result, err := app.Publish.DraftAdd(ctx, draftReq)
 	if err != nil {
 		return &models.ArticleMedia{
 			Aid:        article.ID,
-			Platform:   "wechat",
+			PlatformID: platformID,
 			Status:     2,
 			ErrorMsg:   err.Error(),
 			CreateTime: int(time.Now().Unix()),
 			UpdateTime: int(time.Now().Unix()),
 		}, err
 	}
-	defer resp.Body.Close()
-
-	respBody, _ := io.ReadAll(resp.Body)
-	var result struct {
-		MediaID string `json:"media_id"`
-		Errcode int    `json:"errcode"`
-		Errmsg  string `json:"errmsg"`
-	}
-	json.Unmarshal(respBody, &result)
 
 	if result.MediaID == "" {
-		errMsg := fmt.Sprintf("发布失败: %s", string(respBody))
+		errMsg := fmt.Sprintf("publish failed: errcode=%d errmsg=%s", result.ErrCode, result.ErrMsg)
 		return &models.ArticleMedia{
 			Aid:        article.ID,
-			Platform:   "wechat",
+			PlatformID: platformID,
 			Status:     2,
 			ErrorMsg:   errMsg,
 			CreateTime: int(time.Now().Unix()),
@@ -138,12 +145,116 @@ func (s *WeChatService) PublishDraft(article *models.Article) (*models.ArticleMe
 
 	return &models.ArticleMedia{
 		Aid:        article.ID,
-		Platform:   "wechat",
+		PlatformID: platformID,
 		MediaID:    result.MediaID,
 		Status:     1,
 		CreateTime: int(time.Now().Unix()),
 		UpdateTime: int(time.Now().Unix()),
 	}, nil
+}
+
+func (s *WeChatService) UploadAttachMedia(attach *models.Attach) (*models.AttachMedia, error) {
+	app, err := s.getApp()
+	if err != nil {
+		return nil, err
+	}
+
+	platformID, err := s.getPlatformID("wechat")
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	attachPath := attach.Path
+	ext := filepath.Ext(attachPath)
+
+	now := int(time.Now().Unix())
+	makeFailed := func(errMsg string, origErr error) (*models.AttachMedia, error) {
+		return &models.AttachMedia{
+			AttachID:   attach.ID,
+			PlatformID: platformID,
+			Status:     2,
+			ErrorMsg:   errMsg,
+			CreateTime: now,
+			UpdateTime: now,
+		}, origErr
+	}
+
+	switch ext {
+	case ".jpg", ".jpeg", ".png", ".gif", ".bmp":
+		result, err := app.Material.UploadImage(ctx, attachPath)
+		if err != nil {
+			return makeFailed(err.Error(), err)
+		}
+		if result.MediaID == "" && result.URL == "" {
+			return makeFailed(fmt.Sprintf("upload failed: errcode=%d errmsg=%s", result.ErrCode, result.ErrMsg), errors.New(result.ErrMsg))
+		}
+		return &models.AttachMedia{
+			AttachID:   attach.ID,
+			PlatformID: platformID,
+			MediaID:    result.MediaID,
+			MediaURL:   result.URL,
+			Status:     1,
+			CreateTime: now,
+			UpdateTime: now,
+		}, nil
+
+	case ".mp4":
+		result, err := app.Material.UploadVideo(ctx, attachPath, attach.Name, "")
+		if err != nil {
+			return makeFailed(err.Error(), err)
+		}
+		if result.MediaID == "" && result.URL == "" {
+			return makeFailed(fmt.Sprintf("upload failed: errcode=%d errmsg=%s", result.ErrCode, result.ErrMsg), errors.New(result.ErrMsg))
+		}
+		return &models.AttachMedia{
+			AttachID:   attach.ID,
+			PlatformID: platformID,
+			MediaID:    result.MediaID,
+			MediaURL:   result.URL,
+			Status:     1,
+			CreateTime: now,
+			UpdateTime: now,
+		}, nil
+
+	case ".mp3", ".wav", ".amr":
+		result, err := app.Material.UploadVoice(ctx, attachPath)
+		if err != nil {
+			return makeFailed(err.Error(), err)
+		}
+		if result.MediaID == "" && result.URL == "" {
+			return makeFailed(fmt.Sprintf("upload failed: errcode=%d errmsg=%s", result.ErrCode, result.ErrMsg), errors.New(result.ErrMsg))
+		}
+		return &models.AttachMedia{
+			AttachID:   attach.ID,
+			PlatformID: platformID,
+			MediaID:    result.MediaID,
+			MediaURL:   result.URL,
+			Status:     1,
+			CreateTime: now,
+			UpdateTime: now,
+		}, nil
+
+	default:
+		result, err := app.Material.UploadArticleImage(ctx, attachPath)
+		if err != nil {
+			return makeFailed(err.Error(), err)
+		}
+		if result.MediaID == "" && result.URL == "" {
+			return makeFailed(fmt.Sprintf("upload failed: errcode=%d errmsg=%s", result.ErrCode, result.ErrMsg), errors.New(result.ErrMsg))
+		}
+		return &models.AttachMedia{
+			AttachID:   attach.ID,
+			PlatformID: platformID,
+			MediaID:    result.MediaID,
+			MediaURL:   result.URL,
+			Status:     1,
+			CreateTime: now,
+			UpdateTime: now,
+		}, nil
+	}
 }
 
 func truncate(s string, maxLen int) string {

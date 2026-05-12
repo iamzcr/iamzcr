@@ -117,7 +117,9 @@ function getDefaultMenus() {
     { label: '标签管理', key: '/tags' },
     { label: '评论管理', key: '/comments' },
     { label: '菜单管理', key: '/menus' },
-    { label: '网站设置', key: '/website' }
+    { label: '网站设置', key: '/website' },
+    { label: '平台管理', key: '/platforms' },
+    { label: '附件同步', key: '/attach_media' }
   ]
 }
 
@@ -141,6 +143,8 @@ function mapMenuPath(key: string) {
     '/admin/message/list': '/messages',
     '/admin/permit/list': '/permits',
     '/admin/read/list': '/reads',
+    '/admin/platform/list': '/platforms',
+    '/admin/attach_media/list': '/attach_media',
   }
 
   let path = pathMap[key] || key
@@ -157,7 +161,7 @@ function handleMenuSelect(key: string) {
 
 const userOptions = [
   { label: '修改密码', key: 'password' },
-  { label: '退出登录', key: 'logout' }
+  { label: '退出登�?, key: 'logout' }
 ]
 
 function handleUserSelect(key: string) {
@@ -226,7 +230,7 @@ watch(
           <div class="user-info">
             <n-dropdown :options="userOptions" @select="handleUserSelect">
               <n-button text>
-                <span class="username">{{ adminInfo?.name || '管理员' }} ▼</span>
+                <span class="username">{{ adminInfo?.name || '管理�? }} �?/span>
               </n-button>
             </n-dropdown>
           </div>

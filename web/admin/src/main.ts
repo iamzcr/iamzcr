@@ -28,6 +28,9 @@ import AdminList from './views/AdminList.vue'
 import AdminGroupList from './views/AdminGroupList.vue'
 import PasswordChange from './views/PasswordChange.vue'
 
+import PlatformList from './views/PlatformList.vue'
+import AttachMediaList from './views/AttachMediaList.vue'
+
 const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -51,6 +54,9 @@ const router = createRouter({
     { path: '/admins', component: AdminList },
     { path: '/admin_groups', component: AdminGroupList },
     { path: '/password', component: PasswordChange },
+
+    { path: '/platforms', component: PlatformList },
+    { path: '/attach_media', component: AttachMediaList },
   ]
 })
 

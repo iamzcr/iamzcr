@@ -16,9 +16,9 @@ func (s *ArticleMediaService) ListByArticle(articleID int) ([]models.ArticleMedi
 	return records, err
 }
 
-func (s *ArticleMediaService) GetByArticleAndPlatform(articleID int, platform string) (*models.ArticleMedia, error) {
+func (s *ArticleMediaService) GetByArticleAndPlatform(articleID, platformID int) (*models.ArticleMedia, error) {
 	var record models.ArticleMedia
-	err := models.DB.Where("aid = ? AND platform = ?", articleID, platform).First(&record).Error
+	err := models.DB.Where("aid = ? AND platform_id = ?", articleID, platformID).First(&record).Error
 	if err != nil {
 		return nil, nil
 	}

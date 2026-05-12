@@ -59,7 +59,7 @@ func (h *AdminHandler) GetAdminInfo(c *gin.Context) {
 
 	admin, adminGroup, err := h.adminSvc.GetAdminInfo(userID)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "message": "用户不存在"})
+		c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "message": "user not found"})
 		return
 	}
 
@@ -181,14 +181,19 @@ func (h *AdminHandler) UpdateArticle(c *gin.Context) {
 			responseData["wechat_publish_error"] = err.Error()
 		}
 		if mediaRecord != nil {
+			var platform models.Platform
 			var existing models.ArticleMedia
-			result := models.DB.Where("aid = ? AND platform = ?", id, "wechat").First(&existing)
-			if result.Error == nil && existing.ID > 0 {
-				existing.MediaID = mediaRecord.MediaID
-				existing.Status = mediaRecord.Status
-				existing.ErrorMsg = mediaRecord.ErrorMsg
-				existing.UpdateTime = mediaRecord.UpdateTime
-				models.DB.Save(&existing)
+			if dbErr := models.DB.Where("mark = ?", "wechat").First(&platform).Error; dbErr == nil {
+				result := models.DB.Where("aid = ? AND platform_id = ?", id, platform.ID).First(&existing)
+				if result.Error == nil && existing.ID > 0 {
+					existing.MediaID = mediaRecord.MediaID
+					existing.Status = mediaRecord.Status
+					existing.ErrorMsg = mediaRecord.ErrorMsg
+					existing.UpdateTime = mediaRecord.UpdateTime
+					models.DB.Save(&existing)
+				} else {
+					models.DB.Create(mediaRecord)
+				}
 			} else {
 				models.DB.Create(mediaRecord)
 			}

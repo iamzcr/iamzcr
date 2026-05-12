@@ -2,7 +2,7 @@
 import { ref, onMounted, h } from 'vue'
 import { NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSelect, NTag, NUpload, NImage, NSpace, useMessage } from 'naive-ui'
 import type { UploadFileInfo } from 'naive-ui'
-import { attachApi, websiteApi } from '../api'
+import { attachApi, attachMediaApi, websiteApi } from '../api'
 
 const message = useMessage()
 const attaches = ref<any[]>([])
@@ -56,8 +56,9 @@ const columns = [
   { title: '类型', key: 'type', width: 80, render: (row: any) => h(NTag, { type: row.type === 1 ? 'warning' : 'info', size: 'small' }, () => row.type === 1 ? '图片' : '视频') },
   { title: '状态', key: 'status', width: 80, render: (row: any) => h(NTag, { type: row.status === 1 ? 'success' : 'error', size: 'small' }, () => row.status === 1 ? '启用' : '禁用') },
   { title: '创建时间', key: 'create_time', width: 180, render: (row: any) => formatDate(row.create_time) },
-  { title: '操作', key: 'actions', width: 150, render: (row: any) => h(NSpace, () => [
+  { title: '操作', key: 'actions', width: 220, render: (row: any) => h(NSpace, () => [
     h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑'),
+    h(NButton, { size: 'small', type: 'info', onClick: () => syncToWechat(row.id) }, () => '同步微信'),
     h(NButton, { size: 'small', type: 'error', onClick: () => deleteAttach(row.id) }, () => '删除')
   ])}
 ]
@@ -107,6 +108,15 @@ async function saveAttach() {
   }
   showModal.value = false
   loadAttaches()
+}
+
+async function syncToWechat(id: number) {
+  try {
+    await attachMediaApi.syncToWechat(id)
+    message.success('同步成功')
+  } catch (e: any) {
+    message.error(e.response?.data?.message || '同步失败')
+  }
 }
 
 async function deleteAttach(id: number) {

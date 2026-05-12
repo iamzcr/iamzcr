@@ -274,7 +274,7 @@ func (Read) TableName() string {
 type ArticleMedia struct {
 	ID         int    `gorm:"primaryKey;column:id" json:"id"`
 	Aid        int    `gorm:"column:aid" json:"aid"`
-	Platform   string `gorm:"column:platform;size:32" json:"platform"`
+	PlatformID int    `gorm:"column:platform_id" json:"platform_id"`
 	MediaID    string `gorm:"column:media_id;size:255" json:"media_id"`
 	Status     int    `gorm:"column:status" json:"status"`
 	PublishURL string `gorm:"column:publish_url;size:500" json:"publish_url"`
@@ -285,4 +285,34 @@ type ArticleMedia struct {
 
 func (ArticleMedia) TableName() string {
 	return "sl_article_media"
+}
+
+
+type Platform struct {
+	ID         int    `gorm:"primaryKey;column:id" json:"id"`
+	Mark       string `gorm:"column:mark;size:64" json:"mark"`
+	Name       string `gorm:"column:name;size:64" json:"name"`
+	Status     int    `gorm:"column:status" json:"status"`
+	CreateTime int    `gorm:"column:create_time" json:"create_time"`
+	UpdateTime int    `gorm:"column:update_time" json:"update_time"`
+}
+
+func (Platform) TableName() string {
+	return "sl_platform"
+}
+
+type AttachMedia struct {
+	ID         int    `gorm:"primaryKey;column:id" json:"id"`
+	PlatformID int    `gorm:"column:platform_id" json:"platform_id"`
+	AttachID   int    `gorm:"column:attach_id" json:"attach_id"`
+	MediaID    string `gorm:"column:media_id;size:64" json:"media_id"`
+	ErrorMsg   string `gorm:"column:error_msg;size:255" json:"error_msg"`
+	MediaURL   string `gorm:"column:media_url;size:255" json:"media_url"`
+	Status     int    `gorm:"column:status" json:"status"`
+	CreateTime int    `gorm:"column:create_time" json:"create_time"`
+	UpdateTime int    `gorm:"column:update_time" json:"update_time"`
+}
+
+func (AttachMedia) TableName() string {
+	return "sl_attach_media"
 }

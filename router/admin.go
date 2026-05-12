@@ -27,6 +27,8 @@ func SetupAdminRoutes(r *gin.Engine, cfg *config.Config) {
 	adminGroupSvc := adminS.NewAdminGroupService()
 	articleMediaSvc := adminS.NewArticleMediaService()
 	wechatSvc := adminS.NewWeChatService()
+	platformSvc := adminS.NewPlatformService()
+	attachMediaSvc := adminS.NewAttachMediaService()
 
 	api := r.Group("/api")
 	{
@@ -145,6 +147,19 @@ func SetupAdminRoutes(r *gin.Engine, cfg *config.Config) {
 			adminGroup.POST("/admin_groups", adminGroupHandler.Create)
 			adminGroup.PUT("/admin_groups/:id", adminGroupHandler.Update)
 			adminGroup.DELETE("/admin_groups/:id", adminGroupHandler.Delete)
+
+			platformHandler := adminH.NewPlatformHandler(platformSvc)
+			adminGroup.GET("/platforms", platformHandler.List)
+			adminGroup.GET("/platforms/:id", platformHandler.Get)
+			adminGroup.POST("/platforms", platformHandler.Create)
+			adminGroup.PUT("/platforms/:id", platformHandler.Update)
+			adminGroup.DELETE("/platforms/:id", platformHandler.Delete)
+
+			attachMediaHandler := adminH.NewAttachMediaHandler(attachMediaSvc, attachSvc, wechatSvc)
+			adminGroup.GET("/attach_media", attachMediaHandler.List)
+			adminGroup.GET("/attach_media/:id", attachMediaHandler.Get)
+			adminGroup.POST("/attaches/:id/sync_wechat", attachMediaHandler.SyncToWechat)
+			adminGroup.DELETE("/attach_media/:id", attachMediaHandler.Delete)
 		}
 	}
 
