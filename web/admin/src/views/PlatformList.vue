@@ -12,12 +12,12 @@ const message = useMessage()
 
 const columns = [
   { title: 'ID', key: 'id', width: 60 },
-  { title: 'Ãû³Æ', key: 'name' },
-  { title: '±êÊ¶', key: 'mark' },
-  { title: '×´Ì¬', key: 'status', width: 80, render: (row: any) => h(NTag, { type: row.status === 1 ? 'success' : 'default', size: 'small' }, () => row.status === 1 ? 'ÆôÓÃ' : '½ûÓÃ') },
-  { title: '²Ù×÷', key: 'actions', width: 150, render: (row: any) => h(NSpace, () => [
-    h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '±à¼­'),
-    h(NButton, { size: 'small', type: 'error', onClick: () => deletePlatform(row.id) }, () => 'É¾³ı')
+  { title: 'åç§°', key: 'name' },
+  { title: 'æ ‡è¯†', key: 'mark' },
+  { title: 'çŠ¶æ€', key: 'status', width: 80, render: (row: any) => h(NTag, { type: row.status === 1 ? 'success' : 'default', size: 'small' }, () => row.status === 1 ? 'å¯ç”¨' : 'ç¦ç”¨') },
+  { title: 'æ“ä½œ', key: 'actions', width: 150, render: (row: any) => h(NSpace, () => [
+    h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => 'ç¼–è¾‘'),
+    h(NButton, { size: 'small', type: 'error', onClick: () => deletePlatform(row.id) }, () => 'åˆ é™¤')
   ])}
 ]
 
@@ -49,7 +49,7 @@ async function savePlatform() {
 
 async function deletePlatform(id: number) {
   await platformApi.delete(id)
-  message.success('É¾³ı³É¹¦')
+  message.success('åˆ é™¤æˆåŠŸ')
   loadPlatforms()
 }
 
@@ -59,7 +59,7 @@ onMounted(loadPlatforms)
 <template>
   <div>
     <div style="margin-bottom: 16px; display: flex; justify-content: flex-end;">
-      <n-button type="primary" @click="openEdit()">ĞÂ½¨Æ½Ì¨</n-button>
+      <n-button type="primary" @click="openEdit()">æ–°å»ºå¹³å°</n-button>
     </div>
     <n-data-table 
       :columns="columns" 
@@ -69,21 +69,21 @@ onMounted(loadPlatforms)
       :pagination="pagination"
       @update:page="pagination.page = $event; loadPlatforms()"
     />
-    <n-modal v-model:show="showModal" preset="card" title="Æ½Ì¨¹ÜÀí" style="width: 500px">
+    <n-modal v-model:show="showModal" preset="card" title="å¹³å°ç®¡ç†" style="width: 500px">
       <n-form :model="editingPlatform">
-        <n-form-item label="Ãû³Æ">
+        <n-form-item label="åç§°">
           <n-input v-model:value="editingPlatform.name" />
         </n-form-item>
-        <n-form-item label="±êÊ¶">
-          <n-input v-model:value="editingPlatform.mark" placeholder="Èç: wechat, bilibili" />
+        <n-form-item label="æ ‡è¯†">
+          <n-input v-model:value="editingPlatform.mark" placeholder="å¦‚: wechat, bilibili" />
         </n-form-item>
-        <n-form-item label="×´Ì¬">
+        <n-form-item label="çŠ¶æ€">
           <n-switch v-model:value="editingPlatform.status" :checked-value="1" :unchecked-value="0" />
         </n-form-item>
       </n-form>
       <template #footer>
-        <n-button @click="showModal = false">È¡Ïû</n-button>
-        <n-button type="primary" @click="savePlatform">±£´æ</n-button>
+        <n-button @click="showModal = false">å–æ¶ˆ</n-button>
+        <n-button type="primary" @click="savePlatform">ä¿å­˜</n-button>
       </template>
     </n-modal>
   </div>

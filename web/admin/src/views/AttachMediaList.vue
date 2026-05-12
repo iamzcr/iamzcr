@@ -23,19 +23,19 @@ function formatDate(time: number | string) {
 
 const columns = [
   { title: 'ID', key: 'id', width: 60 },
-  { title: '¸½¼şID', key: 'attach_id', width: 80 },
-  { title: 'Æ½Ì¨ID', key: 'platform_id', width: 80 },
-  { title: 'Ã½ÌåID', key: 'media_id', ellipsis: { tooltip: true } },
-  { title: 'Ã½ÌåURL', key: 'media_url', ellipsis: { tooltip: true } },
-  { title: '×´Ì¬', key: 'status', width: 80, render: (row: any) => {
-    if (row.status === 1) return h(NTag, { type: 'success', size: 'small' }, () => 'ÒÑÍ¬²½')
-    if (row.status === 2) return h(NTag, { type: 'error', size: 'small' }, () => 'Ê§°Ü')
-    return h(NTag, { type: 'default', size: 'small' }, () => '´ı´¦Àí')
+  { title: 'é™„ä»¶ID', key: 'attach_id', width: 80 },
+  { title: 'å¹³å°ID', key: 'platform_id', width: 80 },
+  { title: 'åª’ä½“ID', key: 'media_id', ellipsis: { tooltip: true } },
+  { title: 'åª’ä½“URL', key: 'media_url', ellipsis: { tooltip: true } },
+  { title: 'çŠ¶æ€', key: 'status', width: 80, render: (row: any) => {
+    if (row.status === 1) return h(NTag, { type: 'success', size: 'small' }, () => 'å·²åŒæ­¥')
+    if (row.status === 2) return h(NTag, { type: 'error', size: 'small' }, () => 'å¤±è´¥')
+    return h(NTag, { type: 'default', size: 'small' }, () => 'å¾…å¤„ç†')
   }},
-  { title: '´íÎóĞÅÏ¢', key: 'error_msg', ellipsis: { tooltip: true }, width: 150 },
-  { title: '¸üĞÂÊ±¼ä', key: 'update_time', width: 180, render: (row: any) => formatDate(row.update_time) },
-  { title: '²Ù×÷', key: 'actions', width: 100, render: (row: any) => h(NSpace, () => [
-    h(NButton, { size: 'small', type: 'error', onClick: () => deleteRecord(row.id) }, () => 'É¾³ı')
+  { title: 'é”™è¯¯ä¿¡æ¯', key: 'error_msg', ellipsis: { tooltip: true }, width: 150 },
+  { title: 'æ›´æ–°æ—¶é—´', key: 'update_time', width: 180, render: (row: any) => formatDate(row.update_time) },
+  { title: 'æ“ä½œ', key: 'actions', width: 100, render: (row: any) => h(NSpace, () => [
+    h(NButton, { size: 'small', type: 'error', onClick: () => deleteRecord(row.id) }, () => 'åˆ é™¤')
   ])}
 ]
 
@@ -52,7 +52,7 @@ async function loadRecords() {
 
 async function deleteRecord(id: number) {
   await attachMediaApi.delete(id)
-  message.success('É¾³ı³É¹¦')
+  message.success('åˆ é™¤æˆåŠŸ')
   loadRecords()
 }
 

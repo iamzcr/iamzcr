@@ -161,7 +161,7 @@ function handleMenuSelect(key: string) {
 
 const userOptions = [
   { label: '修改密码', key: 'password' },
-  { label: '退出登�?, key: 'logout' }
+  { label: '退出登录', key: 'logout' }
 ]
 
 function handleUserSelect(key: string) {
@@ -230,7 +230,7 @@ watch(
           <div class="user-info">
             <n-dropdown :options="userOptions" @select="handleUserSelect">
               <n-button text>
-                <span class="username">{{ adminInfo?.name || '管理�? }} �?/span>
+                <span class="username">{{ adminInfo?.name || '管理员' }} ▼</span>
               </n-button>
             </n-dropdown>
           </div>
