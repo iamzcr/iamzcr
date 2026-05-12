@@ -1,17 +1,22 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
 import { useRouter } from 'vue-router'
-import { NDataTable, NButton, NTag, NSpace, useMessage } from 'naive-ui'
-import { articleApi } from '../api'
+import { NDataTable, NButton, NTag, NSpace, NModal, NCheckboxGroup, NCheckbox, useMessage } from 'naive-ui'
+import { articleApi, platformApi } from '../api'
 
 const router = useRouter()
 const message = useMessage()
 
 const articles = ref<any[]>([])
 const loading = ref(false)
+const platforms = ref<any[]>([])
 const wechatStatusMap = ref<Record<number, boolean>>({})
 const publishingMap = ref<Record<number, boolean>>({})
 const pagination = ref({ page: 1, pageSize: 10, itemCount: 0 })
+
+const showPublishModal = ref(false)
+const selectedPlatformIds = ref<number[]>([])
+const publishTargetId = ref(0)
 
 function formatDate(time: number | string) {
   if (!time) return '-'
@@ -36,7 +41,7 @@ const columns = [
   { title: '创建时间', key: 'create_time', width: 180, render: (row: any) => formatDate(row.create_time) },
   { title: '操作', key: 'actions', width: 220, render: (row: any) => h(NSpace, () => [
     h(NButton, { size: 'small', onClick: () => router.push(`/articles/edit/${row.id}`) }, () => '编辑'),
-    h(NButton, { size: 'small', type: 'info', loading: publishingMap.value[row.id], onClick: () => publishToWechat(row.id) }, () => '发布'),
+    h(NButton, { size: 'small', type: 'info', loading: publishingMap.value[row.id], onClick: () => openPublishModal(row.id) }, () => '发布'),
     h(NButton, { size: 'small', type: 'error', onClick: () => deleteArticle(row.id) }, () => '删除')
   ])}
 ]
@@ -53,22 +58,39 @@ async function loadArticles() {
   }
 }
 
+async function loadPlatforms() {
+  try {
+    const res = await platformApi.list({ page: 1, page_size: 100 })
+    platforms.value = (res.data.data.list || []).filter((p: any) => p.status === 1)
+  } catch { /* ignore */ }
+}
+
 async function loadWechatStatus() {
+  const wechatPlatform = platforms.value.find((p: any) => p.mark === 'wechat')
   for (const article of articles.value) {
     try {
       const res = await articleApi.getMedia(article.id)
       const records = res.data.data || []
-      wechatStatusMap.value[article.id] = records.some((r: any) => r.platform_id === 1 && r.status === 1)
+      wechatStatusMap.value[article.id] = records.some((r: any) => r.platform_id === wechatPlatform?.id && r.status === 1)
     } catch {
       wechatStatusMap.value[article.id] = false
     }
   }
 }
 
-async function publishToWechat(id: number) {
+function openPublishModal(id: number) {
+  publishTargetId.value = id
+  selectedPlatformIds.value = platforms.value.filter((p: any) => p.status === 1).map((p: any) => p.id)
+  showPublishModal.value = true
+}
+
+async function publishNow() {
+  if (selectedPlatformIds.value.length === 0) return
+  const id = publishTargetId.value
   publishingMap.value[id] = true
+  showPublishModal.value = false
   try {
-    await articleApi.publishToMedia(id, [1])
+    await articleApi.publishToMedia(id, selectedPlatformIds.value)
     message.success('发布成功')
     wechatStatusMap.value[id] = true
   } catch (e: any) {
@@ -84,7 +106,9 @@ async function deleteArticle(id: number) {
   loadArticles()
 }
 
-onMounted(loadArticles)
+onMounted(() => {
+  loadPlatforms().then(() => loadArticles())
+})
 </script>
 
 <template>
@@ -100,5 +124,16 @@ onMounted(loadArticles)
       :pagination="pagination"
       @update:page="pagination.page = $event; loadArticles()"
     />
+    <n-modal v-model:show="showPublishModal" preset="card" title="选择发布平台" style="width: 400px">
+      <n-checkbox-group v-model:value="selectedPlatformIds">
+        <n-space vertical>
+          <n-checkbox v-for="p in platforms" :key="p.id" :value="p.id">{{ p.name }}</n-checkbox>
+        </n-space>
+      </n-checkbox-group>
+      <template #footer>
+        <n-button @click="showPublishModal = false">取消</n-button>
+        <n-button type="primary" @click="publishNow">确定发布</n-button>
+      </template>
+    </n-modal>
   </div>
 </template>

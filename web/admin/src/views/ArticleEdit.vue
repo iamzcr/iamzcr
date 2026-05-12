@@ -2,12 +2,13 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { NForm, NFormItem, NInput, NButton, NCard, NSwitch, NInputNumber, NSelect, NSpace, NGrid, NGridItem, NModal, NImage } from 'naive-ui'
-import { articleApi, categoryApi, directoryApi, tagsApi, attachApi, websiteApi } from '../api'
+import { articleApi, categoryApi, directoryApi, tagsApi, attachApi, websiteApi, platformApi } from '../api'
 
 const route = useRoute()
 const router = useRouter()
 
 const isEdit = computed(() => !!route.params.id)
+const platforms = ref<any[]>([])
 const form = ref({
   cid: 0,
   did: 0,
@@ -26,7 +27,7 @@ const form = ref({
   status: 1,
   month: '',
   tag_ids: [] as number[],
-  publish_to_wechat: false
+  publish_platform_ids: [] as number[]
 })
 const loading = ref(false)
 
@@ -39,6 +40,8 @@ const coverImages = ref<any[]>([])
 const coverLoading = ref(false)
 const cdnUrl = ref('')
 
+const platformOptions = computed(() => platforms.value.map((p: any) => ({ label: p.name, value: p.id })))
+
 function getFullUrl(path: string) {
   if (!path) return ''
   if (path.startsWith('http://') || path.startsWith('https://')) return path
@@ -47,16 +50,18 @@ function getFullUrl(path: string) {
 }
 
 async function loadData() {
-  const [catRes, dirRes, tagRes, webRes] = await Promise.all([
+  const [catRes, dirRes, tagRes, webRes, platRes] = await Promise.all([
     categoryApi.list({ page: 1, page_size: 1000 }),
     directoryApi.list({ page: 1, page_size: 1000 }),
     tagsApi.list({ page: 1, page_size: 1000 }),
-    websiteApi.get()
+    websiteApi.get(),
+    platformApi.list({ page: 1, page_size: 100 })
   ])
   categories.value = catRes.data.data.list || catRes.data.data || []
   directories.value = dirRes.data.data.list || dirRes.data.data || []
   allTags.value = tagRes.data.data.list || tagRes.data.data || []
   cdnUrl.value = webRes.data.data?.cdn_url || ''
+  platforms.value = (platRes.data.data.list || []).filter((p: any) => p.status === 1)
 }
 
 async function loadArticle() {
@@ -81,7 +86,7 @@ async function loadArticle() {
       status: data.article?.status || data.status || 1,
       month: data.article?.month || data.month || '',
       tag_ids: data.tags ? data.tags.map((t: any) => t.id) : [],
-      publish_to_wechat: false
+      publish_platform_ids: [] as number[]
     }
   }
 }
@@ -205,12 +210,11 @@ onMounted(() => {
           </n-switch>
           <span class="prop-label">权重</span>
           <n-input-number v-model:value="form.weight" :min="0" :show-button="false" placeholder="权重" style="width: 80px" />
-          <span class="prop-label">发布到微信公众号</span>
-          <n-switch v-model:value="form.publish_to_wechat">
-            <template #checked>是</template>
-            <template #unchecked>否</template>
-          </n-switch>
         </n-space>
+      </n-form-item>
+
+      <n-form-item label="发布到平台" path="publish_platform_ids">
+        <n-select v-model:value="form.publish_platform_ids" :options="platformOptions" multiple placeholder="选择要发布到的平台（可多选）" clearable />
       </n-form-item>
       </div>
       

@@ -92,8 +92,9 @@ func SetupAdminRoutes(r *gin.Engine, cfg *config.Config) {
 			adminGroup.PUT("/website", websiteHandler.Update)
 			adminGroup.DELETE("/website/:id", websiteHandler.Delete)
 
-			attachHandler := adminH.NewAttachHandler(attachSvc)
+			attachHandler := adminH.NewAttachHandler(attachSvc, attachMediaSvc, wechatSvc)
 			adminGroup.GET("/attaches", attachHandler.List)
+			adminGroup.GET("/attaches/:id/media", attachHandler.GetMediaRecords)
 			adminGroup.GET("/attaches/:id", attachHandler.Get)
 			adminGroup.POST("/attaches", attachHandler.Create)
 			adminGroup.PUT("/attaches/:id", attachHandler.Update)
@@ -158,7 +159,7 @@ func SetupAdminRoutes(r *gin.Engine, cfg *config.Config) {
 			attachMediaHandler := adminH.NewAttachMediaHandler(attachMediaSvc, attachSvc, wechatSvc)
 			adminGroup.GET("/attach_media", attachMediaHandler.List)
 			adminGroup.GET("/attach_media/:id", attachMediaHandler.Get)
-			adminGroup.POST("/attaches/:id/sync_wechat", attachMediaHandler.SyncToWechat)
+			adminGroup.POST("/attaches/:id/sync_media", attachMediaHandler.SyncToMedia)
 			adminGroup.DELETE("/attach_media/:id", attachMediaHandler.Delete)
 		}
 	}

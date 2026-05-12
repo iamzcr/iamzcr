@@ -1,21 +1,25 @@
 package admin
 
 import (
+	"context"
 	"iamzcr/config"
 	"iamzcr/models"
 	svc "iamzcr/services/admin"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
 type AttachHandler struct {
-	svc *svc.AttachService
+	svc           *svc.AttachService
+	attachMediaSvc *svc.AttachMediaService
+	wechatSvc     *svc.WeChatService
 }
 
-func NewAttachHandler(s *svc.AttachService) *AttachHandler {
-	return &AttachHandler{svc: s}
+func NewAttachHandler(s *svc.AttachService, attachMediaSvc *svc.AttachMediaService, wechatSvc *svc.WeChatService) *AttachHandler {
+	return &AttachHandler{svc: s, attachMediaSvc: attachMediaSvc, wechatSvc: wechatSvc}
 }
 
 func (h *AttachHandler) Upload(c *gin.Context) {
@@ -91,9 +95,53 @@ func (h *AttachHandler) Update(c *gin.Context) {
 
 func (h *AttachHandler) Delete(c *gin.Context) {
 	id := parseInt(c.Param("id"))
+
+	deleteMedia := c.Query("delete_media") == "true"
+
+	if deleteMedia {
+		mediaRecords, err := h.attachMediaSvc.ListByAttachID(id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": err.Error()})
+			return
+		}
+
+		for _, media := range mediaRecords {
+			var platform models.Platform
+			if dbErr := models.DB.First(&platform, media.PlatformID).Error; dbErr != nil {
+				continue
+			}
+			if platform.Mark == "wechat" && media.MediaID != "" {
+				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				_ = h.wechatSvc.DeleteMaterial(ctx, media.MediaID)
+				cancel()
+			}
+		}
+
+		if err := h.attachMediaSvc.DeleteByAttachID(id); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": err.Error()})
+			return
+		}
+	}
+
 	if err := h.svc.Delete(id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "success"})
+}
+
+func (h *AttachHandler) GetMediaRecords(c *gin.Context) {
+	id := parseInt(c.Param("id"))
+
+	records, err := h.attachMediaSvc.ListByAttachID(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": err.Error()})
+		return
+	}
+
+	if records == nil {
+		records = []models.AttachMedia{}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "success", "data": records})
 }

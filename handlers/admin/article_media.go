@@ -81,7 +81,7 @@ func (h *ArticleMediaHandler) PublishToMedia(c *gin.Context) {
 
 		switch platform.Mark {
 		case "wechat":
-			mediaRecord, err := h.wechatSvc.PublishDraft(article)
+			mediaRecord, err := h.wechatSvc.PublishDraft(article, platformID)
 			if err != nil {
 				publishError = err.Error()
 			}
