@@ -5,6 +5,7 @@ import (
 	"iamzcr/config"
 	"iamzcr/models"
 	svc "iamzcr/services/admin"
+	"log"
 	"net/http"
 	"time"
 
@@ -108,12 +109,23 @@ func (h *AttachHandler) Delete(c *gin.Context) {
 		for _, media := range mediaRecords {
 			var platform models.Platform
 			if dbErr := models.DB.First(&platform, media.PlatformID).Error; dbErr != nil {
+				log.Printf("Delete attach media: platform %d not found", media.PlatformID)
 				continue
 			}
-			if platform.Mark == "wechat" && media.MediaID != "" {
-				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-				_ = h.wechatSvc.DeleteMaterial(ctx, media.MediaID)
-				cancel()
+			if platform.Mark == "wechat" {
+				if media.MediaID == "" && media.MediaURL != "" {
+					log.Printf("Delete attach media: attach_id=%d media was uploaded as news_image, cannot delete from WeChat (no permanent media_id)", id)
+					continue
+				}
+				if media.MediaID != "" {
+					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+					if err := h.wechatSvc.DeleteMaterial(ctx, media.MediaID); err != nil {
+						log.Printf("Delete attach media: wechat delete material failed for attach_id=%d media_id=%s: %v", id, media.MediaID, err)
+					} else {
+						log.Printf("Delete attach media: wechat material deleted for attach_id=%d media_id=%s", id, media.MediaID)
+					}
+					cancel()
+				}
 			}
 		}
 
