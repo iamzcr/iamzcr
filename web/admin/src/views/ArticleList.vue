@@ -58,7 +58,7 @@ async function loadWechatStatus() {
     try {
       const res = await articleApi.getMedia(article.id)
       const records = res.data.data || []
-      wechatStatusMap.value[article.id] = records.some((r: any) => r.platform === 'wechat' && r.status === 1)
+      wechatStatusMap.value[article.id] = records.some((r: any) => r.platform_id === 1 && r.status === 1)
     } catch {
       wechatStatusMap.value[article.id] = false
     }
@@ -68,7 +68,7 @@ async function loadWechatStatus() {
 async function publishToWechat(id: number) {
   publishingMap.value[id] = true
   try {
-    await articleApi.publishToMedia(id, ['wechat'])
+    await articleApi.publishToMedia(id, [1])
     message.success('发布成功')
     wechatStatusMap.value[id] = true
   } catch (e: any) {
