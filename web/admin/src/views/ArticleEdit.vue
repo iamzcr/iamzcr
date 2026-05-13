@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { NForm, NFormItem, NInput, NButton, NCard, NSwitch, NInputNumber, NSelect, NSpace, NGrid, NGridItem, NModal, NImage, NRadioGroup, NRadioButton } from 'naive-ui'
+import { NForm, NFormItem, NInput, NButton, NCard, NSwitch, NInputNumber, NSelect, NSpace, NGrid, NGridItem, NModal, NImage, NRadioGroup, NRadioButton, NDatePicker } from 'naive-ui'
 import { Editor } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
@@ -49,6 +49,13 @@ const richEditor = ref<Editor | null>(null)
 const richEditorDom = ref<any>(null)
 
 const platformOptions = computed(() => platforms.value.map((p: any) => ({ label: p.name, value: p.id })))
+
+const publicTimeMs = computed({
+  get: () => form.value.public_time ? form.value.public_time * 1000 : null,
+  set: (val: number | null) => {
+    form.value.public_time = val ? Math.floor(val / 1000) : 0
+  }
+})
 
 function initRichEditor() {
   if (richEditor.value) {
@@ -229,8 +236,8 @@ onBeforeUnmount(() => {
           <n-button @click="openCoverModal">选择封面</n-button>
           <n-button v-if="form.thumb" @click="clearCover" secondary>清除</n-button>
         </div>
-        <div v-if="form.thumb" style="margin-top: 8px;">
-          <n-image width="200" :src="getFullUrl(form.thumb)" style="border-radius: 4px; border: 1px solid #eee;" />
+        <div v-if="form.thumb" style="margin-top: 8px; max-width: 200px;">
+          <n-image width="200" :src="getFullUrl(form.thumb)" style="border-radius: 4px; border: 1px solid #eee;" :img-props="{ style: { maxHeight: '300px', objectFit: 'cover' } }" />
         </div>
       </n-form-item>
       
@@ -256,6 +263,8 @@ onBeforeUnmount(() => {
             <template #checked>已发布</template>
             <template #unchecked>草稿</template>
           </n-switch>
+          <span class="prop-label">发布时间</span>
+          <n-date-picker v-model:value="publicTimeMs" type="datetime" clearable placeholder="选择时间" style="width: 180px" />
           <span class="prop-label">权重</span>
           <n-input-number v-model:value="form.weight" :min="0" :show-button="false" placeholder="权重" style="width: 80px" />
         </n-space>
