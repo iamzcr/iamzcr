@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { NMenu, NDropdown, NButton, NIcon } from 'naive-ui'
+import { NMenu, NDropdown } from 'naive-ui'
 import { menuApi, authApi } from './api'
 
 function getCollapsed(): boolean {
   const stored = localStorage.getItem('sidebar_collapsed')
-  return stored !== null ? stored === 'true' : true
+  return stored !== null ? stored === 'true' : false
 }
 
 function setCollapsed(val: boolean) {
@@ -66,7 +66,7 @@ async function loadMenus() {
     
     if (!menus || menus.length === 0) {
       menuOptions.value = getDefaultMenus()
-      expandedKeys.value = []
+      expandedKeys.value = ['menu-articles']
       return
     }
 
@@ -97,11 +97,11 @@ async function loadMenus() {
       .map(toMenuOption)
 
     menuOptions.value = roots.length > 0 ? roots : getDefaultMenus()
-    expandedKeys.value = []
+    expandedKeys.value = ['menu-articles']
   } catch (e) {
     console.error('Load menus error:', e)
     menuOptions.value = getDefaultMenus()
-    expandedKeys.value = []
+    expandedKeys.value = ['menu-articles']
   }
 }
 
@@ -161,6 +161,7 @@ function handleMenuSelect(key: string) {
 
 const userOptions = [
   { label: '修改密码', key: 'password' },
+  { type: 'divider' as const, key: 'd1' },
   { label: '退出登录', key: 'logout' }
 ]
 
@@ -196,50 +197,62 @@ watch(
 <template>
   <n-message-provider>
     <div id="app-container">
-      <div class="sidebar" :class="{ collapsed }" v-if="!isLoginPage">
-        <div class="logo">
-          <span v-if="collapsed" class="logo-short">B</span>
-          <span v-else class="logo-full">Blog Admin</span>
+      <aside class="sidebar" :class="{ collapsed }" v-if="!isLoginPage">
+        <div class="sb-logo">
+          <div class="sb-logo-icon">☰</div>
+          <span v-if="!collapsed" class="sb-logo-text">Blog Admin</span>
         </div>
-        <n-menu
-          :collapsed="collapsed"
-          :collapsed-width="64"
-          :collapsed-icon-size="18"
-          :options="menuOptions"
-          :value="selectedMenuKey"
-          :expanded-keys="expandedKeys"
-          @update:expanded-keys="expandedKeys = $event"
-          @update:value="handleMenuSelect"
-        />
-      </div>
-      <div class="main-content" v-if="!isLoginPage">
-        <div class="header">
-          <n-button text class="collapse-trigger" @click="toggleCollapsed" :title="collapsed ? '展开菜单' : '收起菜单'">
-            <n-icon size="18">
-              <svg v-if="collapsed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="3" y1="6" x2="21" y2="6"></line>
-                <line x1="3" y1="12" x2="21" y2="12"></line>
-                <line x1="3" y1="18" x2="21" y2="18"></line>
-              </svg>
-              <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </n-icon>
-          </n-button>
-          <div class="user-info">
-            <n-dropdown :options="userOptions" @select="handleUserSelect">
-              <n-button text>
-                <span class="username">{{ adminInfo?.name || '管理员' }} ▼</span>
-              </n-button>
+        <div class="sb-menu">
+          <n-menu
+            :collapsed="collapsed"
+            :collapsed-width="64"
+            :collapsed-icon-size="18"
+            :options="menuOptions"
+            :value="selectedMenuKey"
+            :expanded-keys="expandedKeys"
+            inverted
+            @update:expanded-keys="expandedKeys = $event"
+            @update:value="handleMenuSelect"
+          />
+        </div>
+        <div v-if="!collapsed" class="sb-footer">
+          <span class="sb-version">v1.0</span>
+        </div>
+      </aside>
+
+      <div class="main-area" v-if="!isLoginPage">
+        <header class="topbar">
+          <button class="topbar-trigger" @click="toggleCollapsed" :title="collapsed ? '展开' : '收起'">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+
+          <div class="topbar-right">
+            <n-dropdown :options="userOptions" @select="handleUserSelect" placement="bottom-end">
+              <button class="topbar-user">
+                <span class="topbar-avatar">{{ (adminInfo?.name || 'A')[0] }}</span>
+                <span class="topbar-username">{{ adminInfo?.name || '管理员' }}</span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
             </n-dropdown>
           </div>
-        </div>
-        <div class="content">
-          <router-view :key="route.fullPath" />
-        </div>
+        </header>
+
+        <main class="page-content">
+          <router-view v-slot="{ Component }">
+            <transition name="page" mode="out-in">
+              <component :is="Component" :key="$route.fullPath" />
+            </transition>
+          </router-view>
+        </main>
       </div>
-      <div v-if="isLoginPage" class="login-page">
+
+      <div v-if="isLoginPage" class="login-wrapper">
         <router-view />
       </div>
     </div>
@@ -247,7 +260,9 @@ watch(
 </template>
 
 <style>
-* {
+*,
+*::before,
+*::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -255,137 +270,213 @@ watch(
 
 body, html {
   height: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 #app-container {
   height: 100vh;
   display: flex;
   flex-direction: row;
+  background: var(--page-bg);
 }
 
-#app-container > .sidebar {
+/* Sidebar */
+.sidebar {
   width: 240px;
-  background: #ffffff;
-  border-right: 1px solid #e2e8f0;
-  overflow-y: auto;
   flex-shrink: 0;
-  transition: width 0.2s ease;
+  background: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
-#app-container > .sidebar.collapsed {
+.sidebar.collapsed {
   width: 64px;
 }
 
-.sidebar :deep(.n-menu) {
-  background: transparent;
-  color: #334155;
-}
-
-.sidebar :deep(.n-menu-item-content) {
-  background: transparent;
-  margin: 4px 10px;
-  border-radius: 10px;
-}
-
-.sidebar :deep(.n-menu-item-content:hover) {
-  background: #f1f5f9;
-}
-
-.sidebar :deep(.n-menu-item-content--selected) {
-  background: #e0ecff;
-}
-
-.sidebar :deep(.n-menu-item-content--selected::before) {
-  background: #2563eb;
-}
-
-.sidebar.collapsed :deep(.n-menu-item-content) {
-  margin: 4px 0;
-  justify-content: center;
-}
-
-.sidebar .logo {
+.sb-logo {
   display: flex;
   align-items: center;
-  justify-content: center;
-  height: 60px;
-  background: #ffffff;
-  color: #0f172a;
-  border-bottom: 1px solid #e2e8f0;
-  font-weight: bold;
-  white-space: nowrap;
+  gap: 10px;
+  height: 56px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--sidebar-border);
+  flex-shrink: 0;
   overflow: hidden;
-  transition: padding 0.2s ease;
+  white-space: nowrap;
 }
 
-.logo-full {
+.sidebar.collapsed .sb-logo {
+  padding: 0;
+  justify-content: center;
+}
+
+.sb-logo-icon {
   font-size: 18px;
+  color: var(--accent);
+  flex-shrink: 0;
+  width: 24px;
+  text-align: center;
 }
 
-.logo-short {
-  font-size: 22px;
-  letter-spacing: 1px;
+.sb-logo-text {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--sidebar-text-active);
+  letter-spacing: 0.02em;
 }
 
-#app-container > .main-content {
+.sb-menu {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.sb-footer {
+  padding: 10px 18px;
+  border-top: 1px solid var(--sidebar-border);
+  flex-shrink: 0;
+}
+
+.sb-version {
+  font-size: 11px;
+  color: var(--sidebar-text);
+  opacity: 0.5;
+}
+
+/* Main area */
+.main-area {
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-width: 0;
 }
 
-#app-container > .login-page {
+/* Top bar */
+.topbar {
+  height: 56px;
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--header-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  flex-shrink: 0;
+}
+
+.topbar-trigger {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.topbar-trigger:hover {
+  background: var(--page-bg);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+}
+
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.topbar-user:hover {
+  background: var(--page-bg);
+  border-color: var(--border);
+}
+
+.topbar-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.topbar-username {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+/* Page content */
+.page-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+/* Login wrapper */
+.login-wrapper {
   width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
+  background: var(--page-bg);
 }
 
-.header {
-  height: 60px;
-  background: #ffffff;
-  border-bottom: 1px solid #e2e8f0;
+/* Page transition */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-leave-to {
+  opacity: 0;
+}
+
+/* Shared page layout for table/list views */
+.page-wrap {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+  padding: 20px;
+}
+
+.page-toolbar {
   display: flex;
+  justify-content: flex-end;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  flex-shrink: 0;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
-.collapse-trigger {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  color: #475569;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.collapse-trigger:hover {
-  background: #eef2ff;
-  color: #1d4ed8;
-}
-
-.header .username {
-  color: #334155;
-}
-
-.user-info {
-  cursor: pointer;
-}
-
-.username {
-  color: #334155;
-}
-
-.content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 24px;
-  background: #f5f7fa;
+.page-toolbar:empty {
+  display: none;
 }
 </style>

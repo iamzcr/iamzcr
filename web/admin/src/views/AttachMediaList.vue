@@ -60,7 +60,7 @@ onMounted(loadRecords)
 </script>
 
 <template>
-  <div>
+  <div class="page-wrap">
     <n-data-table 
       :columns="columns" 
       :data="records" 

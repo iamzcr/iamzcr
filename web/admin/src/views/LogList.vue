@@ -52,7 +52,7 @@ onMounted(loadLogs)
 </script>
 
 <template>
-  <div>
+  <div class="page-wrap">
     <n-data-table :columns="columns" :data="logs" :loading="loading" remote :pagination="pagination" @update:page="pagination.page = $event; loadLogs()" />
   </div>
 </template>

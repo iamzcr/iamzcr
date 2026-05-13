@@ -67,8 +67,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
-    <div style="margin-bottom: 16px; display: flex; gap: 8px; align-items: center;">
+  <div class="page-wrap">
+    <div class="page-toolbar">
       <n-input v-model:value="aid" placeholder="文章ID" style="width: 120px" />
       <n-button type="primary" @click="loadReads">搜索</n-button>
     </div>

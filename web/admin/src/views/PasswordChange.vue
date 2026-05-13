@@ -46,7 +46,8 @@ async function changePassword() {
 </script>
 
 <template>
-  <n-card title="修改密码">
+  <div class="page-wrap">
+    <n-card title="修改密码">
     <n-form :model="form" label-placement="left" label-width="100">
       <n-form-item label="原密码">
         <n-input v-model:value="form.old_password" type="password" placeholder="请输入原密码" />
@@ -64,4 +65,5 @@ async function changePassword() {
       </n-form-item>
     </n-form>
   </n-card>
+  </div>
 </template>

@@ -4,8 +4,8 @@ import { articleApi, categoryApi, tagsApi } from '../api'
 
 const loading = ref(false)
 const stats = ref([
-  { label: '文章数量', value: 0, accent: '#2563eb' },
-  { label: '分类数量', value: 0, accent: '#0f766e' },
+  { label: '文章数量', value: 0, accent: '#18a058' },
+  { label: '分类数量', value: 0, accent: '#2563eb' },
   { label: '标签数量', value: 0, accent: '#7c3aed' }
 ])
 
@@ -26,8 +26,8 @@ async function loadStats() {
     ])
 
     stats.value = [
-      { label: '文章数量', value: getTotal(articleRes.data.data), accent: '#2563eb' },
-      { label: '分类数量', value: getTotal(categoryRes.data.data), accent: '#0f766e' },
+      { label: '文章数量', value: getTotal(articleRes.data.data), accent: '#18a058' },
+      { label: '分类数量', value: getTotal(categoryRes.data.data), accent: '#2563eb' },
       { label: '标签数量', value: getTotal(tagsRes.data.data), accent: '#7c3aed' }
     ]
   } finally {
@@ -40,22 +40,20 @@ onMounted(loadStats)
 
 <template>
   <div class="dashboard-page">
-    <div class="dashboard-head">
-      <div>
-        <h1>概况</h1>
-        <p>查看当前博客的基础数据。</p>
+    <div class="dash-head">
+      <h1>概况</h1>
+      <p>查看当前博客的基础数据</p>
+    </div>
+
+    <div class="dash-grid" v-if="!loading">
+      <div v-for="(item, i) in stats" :key="item.label" class="dash-card" :style="{ '--i': i }">
+        <span class="dash-bar" :style="{ background: item.accent }"></span>
+        <div class="dash-label">{{ item.label }}</div>
+        <div class="dash-value">{{ item.value.toLocaleString() }}</div>
       </div>
     </div>
 
-    <div class="stats-grid" v-if="!loading">
-      <div v-for="item in stats" :key="item.label" class="stat-card">
-        <span class="stat-bar" :style="{ background: item.accent }"></span>
-        <div class="stat-label">{{ item.label }}</div>
-        <div class="stat-value">{{ item.value }}</div>
-      </div>
-    </div>
-
-    <div v-else class="dashboard-loading">加载中...</div>
+    <div v-else class="dash-loading">加载中...</div>
   </div>
 </template>
 
@@ -66,53 +64,70 @@ onMounted(loadStats)
   gap: 24px;
 }
 
-.dashboard-head h1 {
-  margin-bottom: 8px;
-  color: #0f172a;
-  font-size: 28px;
+.dash-head h1 {
+  margin-bottom: 4px;
 }
 
-.dashboard-head p {
-  color: #64748b;
+.dash-head p {
+  color: var(--text-muted);
+  font-size: 14px;
 }
 
-.stats-grid {
+.dash-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 20px;
 }
 
-.stat-card {
+.dash-card {
   position: relative;
   overflow: hidden;
   padding: 24px;
-  border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  border-radius: 14px;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  animation: cardIn 0.4s ease both;
+  animation-delay: calc(var(--i) * 80ms + 0.05s);
 }
 
-.stat-bar {
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dash-bar {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  height: 4px;
+  height: 3px;
 }
 
-.stat-label {
-  margin-bottom: 14px;
-  color: #64748b;
-  font-size: 14px;
+.dash-label {
+  margin-bottom: 12px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.stat-value {
-  color: #0f172a;
-  font-size: 34px;
+.dash-value {
+  color: var(--text-h);
+  font-size: 36px;
   font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
 }
 
-.dashboard-loading {
-  color: #64748b;
+.dash-loading {
+  color: var(--text-muted);
 }
 </style>
