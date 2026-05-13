@@ -50,7 +50,7 @@ async function loadArticle() {
   } finally {
     loading.value = false
     await nextTick()
-    addCopyButtons()
+    enhanceCodeBlocks()
   }
 }
 
@@ -108,26 +108,104 @@ function formatDate(timestamp: number) {
   return new Date(timestamp * 1000).toLocaleDateString('zh-CN')
 }
 
-function addCopyButtons() {
+function enhanceCodeBlocks() {
   document.querySelectorAll('.hljs-code').forEach((pre) => {
-    if (pre.parentElement?.classList.contains('code-wrapper')) return
-    
-    const wrapper = document.createElement('div')
-    wrapper.className = 'code-wrapper'
-    
+    if (pre.closest('.code-block')) return
+
+    const codeEl = pre.querySelector('code')
+    const langClass = codeEl?.className.match(/language-(\w+)/)?.[1]
+    const langName = langClass === 'plaintext' ? 'Plain Text' : (langClass || 'Code')
+
+    // Count lines
+    const codeText = codeEl?.textContent || ''
+    const lineCount = codeText.split('\n').length
+    const isLong = lineCount > 15
+
+    // Outer wrapper
+    const block = document.createElement('div')
+    block.className = 'code-block'
+
+    // Header
+    const header = document.createElement('div')
+    header.className = 'code-header'
+
+    const lang = document.createElement('span')
+    lang.className = 'code-lang'
+    // Map language to display name
+    const langMap: Record<string, string> = {
+      javascript: 'JavaScript', typescript: 'TypeScript', python: 'Python',
+      go: 'Go', rust: 'Rust', java: 'Java', cpp: 'C++', c: 'C',
+      html: 'HTML', css: 'CSS', scss: 'SCSS', json: 'JSON',
+      xml: 'XML', yaml: 'YAML', markdown: 'Markdown', shell: 'Shell',
+      bash: 'Bash', sh: 'Shell', zsh: 'Zsh', powershell: 'PowerShell',
+      sql: 'SQL', php: 'PHP', ruby: 'Ruby', swift: 'Swift',
+      kotlin: 'Kotlin', dart: 'Dart', lua: 'Lua', r: 'R',
+      dockerfile: 'Dockerfile', nginx: 'Nginx', plaintext: 'Plain Text',
+    }
+    lang.textContent = langMap[langName.toLowerCase()] || langName
+
+    const headerRight = document.createElement('div')
+    headerRight.className = 'code-header-right'
+
+    // Copy button
     const copyBtn = document.createElement('button')
-    copyBtn.className = 'copy-btn'
+    copyBtn.className = 'code-btn'
     copyBtn.textContent = '复制'
-    copyBtn.onclick = () => {
+    copyBtn.onclick = (e) => {
+      e.stopPropagation()
       const code = pre.querySelector('code')?.textContent || ''
       navigator.clipboard.writeText(code)
       copyBtn.textContent = '已复制'
       setTimeout(() => { copyBtn.textContent = '复制' }, 2000)
     }
-    
-    pre.parentElement?.insertBefore(wrapper, pre)
-    wrapper.appendChild(pre)
-    wrapper.appendChild(copyBtn)
+
+    // Toggle button
+    const toggleBtn = document.createElement('button')
+    toggleBtn.className = 'code-btn code-toggle-btn'
+    toggleBtn.innerHTML = '<span class="code-toggle-icon">▾</span>'
+    toggleBtn.title = '折叠/展开'
+    let collapsed = false
+
+    const body = document.createElement('div')
+    body.className = 'code-body'
+
+    toggleBtn.onclick = (e) => {
+      e.stopPropagation()
+      collapsed = !collapsed
+      if (collapsed) {
+        block.classList.add('collapsed')
+        toggleBtn.querySelector('.code-toggle-icon')!.textContent = '▸'
+        toggleBtn.title = '展开代码'
+      } else {
+        block.classList.remove('collapsed')
+        toggleBtn.querySelector('.code-toggle-icon')!.textContent = '▾'
+        toggleBtn.title = '折叠代码'
+      }
+    }
+
+    // Line count badge (only for longer blocks)
+    if (isLong) {
+      const linesBadge = document.createElement('span')
+      linesBadge.className = 'code-lines'
+      linesBadge.textContent = `${lineCount} 行`
+      headerRight.appendChild(linesBadge)
+    }
+
+    headerRight.appendChild(copyBtn)
+    headerRight.appendChild(toggleBtn)
+
+    header.appendChild(lang)
+    header.appendChild(headerRight)
+
+    // Make header clickable to toggle
+    header.onclick = () => toggleBtn.click()
+
+    // Assemble
+    body.appendChild(pre)
+    block.appendChild(header)
+    block.appendChild(body)
+
+    pre.parentElement?.insertBefore(block, pre)
   })
 }
 
@@ -312,10 +390,10 @@ watch(() => route.params.id, () => {
 .markdown-content :deep(.hljs-code) { 
   background: var(--code-bg); 
   padding: 16px; 
-  border-radius: var(--radius-sm); 
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm); 
   overflow-x: auto; 
   position: relative;
-  margin: 1em 0;
+  margin: 0;
   white-space: pre;
   display: block;
 }
@@ -327,26 +405,78 @@ watch(() => route.params.id, () => {
   display: block;
   font-size: 14px;
 }
-.markdown-content :deep(.code-wrapper) {
-  position: relative;
-  margin: 1em 0;
+.markdown-content :deep(.code-block) {
+  margin: 1.2em 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--code-bg);
 }
-.markdown-content :deep(.copy-btn) {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  padding: 4px 12px;
+.markdown-content :deep(.code-header) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+.markdown-content :deep(.code-header:hover) {
+  background: var(--border);
+}
+.markdown-content :deep(.code-lang) {
   font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.markdown-content :deep(.code-lines) {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-right: 4px;
+}
+.markdown-content :deep(.code-header-right) {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.markdown-content :deep(.code-btn) {
+  padding: 3px 10px;
+  font-size: 11px;
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 4px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s;
   color: var(--text-muted);
+  line-height: 1.6;
 }
-.markdown-content :deep(.copy-btn:hover) {
+.markdown-content :deep(.code-btn:hover) {
   background: var(--border);
   color: var(--text);
+}
+.markdown-content :deep(.code-toggle-icon) {
+  display: inline-block;
+  transition: transform 0.25s ease;
+  font-size: 12px;
+}
+.markdown-content :deep(.code-body) {
+  overflow: hidden;
+  transition: max-height 0.35s ease, opacity 0.25s ease, padding 0.25s ease;
+  max-height: 6000px;
+  opacity: 1;
+}
+.markdown-content :deep(.code-block.collapsed .code-body) {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.markdown-content :deep(.code-block.collapsed .code-toggle-icon) {
+  transform: rotate(0deg);
 }
 .markdown-content :deep(blockquote) { border-left: 4px solid var(--border); padding-left: 16px; color: var(--text-muted); margin: 1em 0; }
 .markdown-content :deep(img) { max-width: 100%; border-radius: 8px; }
