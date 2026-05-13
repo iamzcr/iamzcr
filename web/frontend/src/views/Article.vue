@@ -116,22 +116,18 @@ function enhanceCodeBlocks() {
     const langClass = codeEl?.className.match(/language-(\w+)/)?.[1]
     const langName = langClass === 'plaintext' ? 'Plain Text' : (langClass || 'Code')
 
-    // Count lines
     const codeText = codeEl?.textContent || ''
     const lineCount = codeText.split('\n').length
     const isLong = lineCount > 15
 
-    // Outer wrapper
     const block = document.createElement('div')
     block.className = 'code-block'
 
-    // Header
     const header = document.createElement('div')
     header.className = 'code-header'
 
     const lang = document.createElement('span')
     lang.className = 'code-lang'
-    // Map language to display name
     const langMap: Record<string, string> = {
       javascript: 'JavaScript', typescript: 'TypeScript', python: 'Python',
       go: 'Go', rust: 'Rust', java: 'Java', cpp: 'C++', c: 'C',
@@ -149,21 +145,30 @@ function enhanceCodeBlocks() {
 
     // Copy button
     const copyBtn = document.createElement('button')
-    copyBtn.className = 'code-btn'
-    copyBtn.textContent = '复制'
+    copyBtn.className = 'code-btn copy-btn'
+    copyBtn.appendChild(makeCopyIcon())
+    const copyLabel = document.createElement('span')
+    copyLabel.textContent = '复制'
+    copyBtn.appendChild(copyLabel)
+    copyBtn.title = '复制代码'
     copyBtn.onclick = (e) => {
       e.stopPropagation()
       const code = pre.querySelector('code')?.textContent || ''
       navigator.clipboard.writeText(code)
-      copyBtn.textContent = '已复制'
-      setTimeout(() => { copyBtn.textContent = '复制' }, 2000)
+      copyBtn.classList.add('copied')
+      copyLabel.textContent = '已复制'
+      setTimeout(() => {
+        copyBtn.classList.remove('copied')
+        copyLabel.textContent = '复制'
+      }, 2000)
     }
 
     // Toggle button
     const toggleBtn = document.createElement('button')
-    toggleBtn.className = 'code-btn code-toggle-btn'
-    toggleBtn.innerHTML = '<span class="code-toggle-icon">▾</span>'
-    toggleBtn.title = '折叠/展开'
+    toggleBtn.className = 'code-btn toggle-btn'
+    const toggleArrow = makeChevronIcon()
+    toggleBtn.appendChild(toggleArrow)
+    toggleBtn.title = '折叠代码'
     let collapsed = false
 
     const body = document.createElement('div')
@@ -174,16 +179,13 @@ function enhanceCodeBlocks() {
       collapsed = !collapsed
       if (collapsed) {
         block.classList.add('collapsed')
-        toggleBtn.querySelector('.code-toggle-icon')!.textContent = '▸'
         toggleBtn.title = '展开代码'
       } else {
         block.classList.remove('collapsed')
-        toggleBtn.querySelector('.code-toggle-icon')!.textContent = '▾'
         toggleBtn.title = '折叠代码'
       }
     }
 
-    // Line count badge (only for longer blocks)
     if (isLong) {
       const linesBadge = document.createElement('span')
       linesBadge.className = 'code-lines'
@@ -197,16 +199,56 @@ function enhanceCodeBlocks() {
     header.appendChild(lang)
     header.appendChild(headerRight)
 
-    // Make header clickable to toggle
     header.onclick = () => toggleBtn.click()
 
-    // Assemble
-    body.appendChild(pre)
     block.appendChild(header)
     block.appendChild(body)
-
     pre.parentElement?.insertBefore(block, pre)
+    body.appendChild(pre)
   })
+}
+
+function makeCopyIcon(): SVGElement {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  svg.setAttribute('class', 'btn-icon')
+  svg.setAttribute('width', '13')
+  svg.setAttribute('height', '13')
+  svg.setAttribute('viewBox', '0 0 24 24')
+  svg.setAttribute('fill', 'none')
+  svg.setAttribute('stroke', 'currentColor')
+  svg.setAttribute('stroke-width', '2')
+  svg.setAttribute('stroke-linecap', 'round')
+  svg.setAttribute('stroke-linejoin', 'round')
+
+  const r1 = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+  r1.setAttribute('x', '9'); r1.setAttribute('y', '9')
+  r1.setAttribute('width', '13'); r1.setAttribute('height', '13')
+  r1.setAttribute('rx', '2'); svg.appendChild(r1)
+
+  const p = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+  p.setAttribute('d', 'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1')
+  svg.appendChild(p)
+
+  return svg
+}
+
+function makeChevronIcon(): SVGElement {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  svg.setAttribute('class', 'btn-icon toggle-arrow')
+  svg.setAttribute('width', '13')
+  svg.setAttribute('height', '13')
+  svg.setAttribute('viewBox', '0 0 24 24')
+  svg.setAttribute('fill', 'none')
+  svg.setAttribute('stroke', 'currentColor')
+  svg.setAttribute('stroke-width', '2.5')
+  svg.setAttribute('stroke-linecap', 'round')
+  svg.setAttribute('stroke-linejoin', 'round')
+
+  const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polyline')
+  poly.setAttribute('points', '6 9 12 15 18 9')
+  svg.appendChild(poly)
+
+  return svg
 }
 
 onMounted(() => {
@@ -441,27 +483,49 @@ watch(() => route.params.id, () => {
 .markdown-content :deep(.code-header-right) {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 .markdown-content :deep(.code-btn) {
-  padding: 3px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
   font-size: 11px;
-  background: var(--card-bg);
+  font-weight: 500;
+  background: transparent;
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 14px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.2s ease;
   color: var(--text-muted);
-  line-height: 1.6;
+  line-height: 1.5;
+}
+.markdown-content :deep(.code-btn .btn-icon) {
+  flex-shrink: 0;
 }
 .markdown-content :deep(.code-btn:hover) {
-  background: var(--border);
-  color: var(--text);
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+  color: var(--accent);
 }
-.markdown-content :deep(.code-toggle-icon) {
-  display: inline-block;
-  transition: transform 0.25s ease;
-  font-size: 12px;
+.markdown-content :deep(.code-btn:active) {
+  transform: scale(0.96);
+}
+/* Copy button — copied state */
+.markdown-content :deep(.copy-btn.copied) {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+/* Toggle button */
+.markdown-content :deep(.toggle-btn) {
+  padding: 4px 8px;
+}
+.markdown-content :deep(.toggle-arrow) {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.markdown-content :deep(.code-block.collapsed .toggle-arrow) {
+  transform: rotate(-90deg);
 }
 .markdown-content :deep(.code-body) {
   overflow: hidden;
@@ -474,9 +538,6 @@ watch(() => route.params.id, () => {
   opacity: 0;
   padding-top: 0;
   padding-bottom: 0;
-}
-.markdown-content :deep(.code-block.collapsed .code-toggle-icon) {
-  transform: rotate(0deg);
 }
 .markdown-content :deep(blockquote) { border-left: 4px solid var(--border); padding-left: 16px; color: var(--text-muted); margin: 1em 0; }
 .markdown-content :deep(img) { max-width: 100%; border-radius: 8px; }
