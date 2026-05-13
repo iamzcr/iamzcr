@@ -56,8 +56,8 @@ onMounted(loadTags)
 </script>
 
 <template>
-  <div>
-    <div style="margin-bottom: 16px; display: flex; justify-content: flex-end;">
+  <div class="page-wrap">
+    <div class="page-toolbar">
       <n-button type="primary" @click="openEdit()">新建标签</n-button>
     </div>
     <n-data-table :columns="columns" :data="tags" :loading="loading" remote :pagination="pagination" @update:page="pagination.page = $event; loadTags()" />

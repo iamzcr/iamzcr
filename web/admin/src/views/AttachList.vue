@@ -189,8 +189,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
-    <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+  <div class="page-wrap">
+    <div class="page-toolbar">
       <n-upload
         accept="image/*"
         :show-file-list="false"

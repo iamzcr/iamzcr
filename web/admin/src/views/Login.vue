@@ -43,101 +43,143 @@ async function handleLogin() {
 </script>
 
 <template>
-  <div class="login-container">
-    <n-card title="管理员登录" class="login-card">
-      <n-form
-        :model="formValue"
-        :rules="rules"
-        label-placement="left"
-        label-width="60px"
-      >
-        <n-form-item path="username" label="用户">
-          <n-input 
-            v-model:value="formValue.username" 
-            placeholder="请输入用户名" 
-            @keyup.enter="handleLogin"
-          />
-        </n-form-item>
-        <n-form-item path="password" label="密码">
-          <n-input 
-            v-model:value="formValue.password" 
-            type="password"
-            placeholder="请输入密码" 
-            @keyup.enter="handleLogin"
-          />
-        </n-form-item>
-        <n-form-item>
-          <n-button 
-            type="primary" 
-            :loading="loading" 
-            block
-            @click="handleLogin"
-          >
-            登录
-          </n-button>
-        </n-form-item>
-      </n-form>
-    </n-card>
+  <div class="login-page">
+    <div class="login-bg"></div>
+    <div class="login-card-wrap">
+      <div class="login-brand">
+        <span class="login-brand-icon">☰</span>
+        <span class="login-brand-text">Blog Admin</span>
+      </div>
+      <n-card class="login-card" :bordered="false">
+        <n-form
+          :model="formValue"
+          :rules="rules"
+          label-placement="left"
+          label-width="56px"
+          size="large"
+        >
+          <n-form-item path="username" label="账户">
+            <n-input 
+              v-model:value="formValue.username" 
+              placeholder="用户名" 
+              @keyup.enter="handleLogin"
+            />
+          </n-form-item>
+          <n-form-item path="password" label="密码">
+            <n-input 
+              v-model:value="formValue.password" 
+              type="password"
+              placeholder="密码" 
+              @keyup.enter="handleLogin"
+            />
+          </n-form-item>
+          <n-form-item>
+            <n-button 
+              type="primary" 
+              :loading="loading" 
+              block
+              size="large"
+              @click="handleLogin"
+            >
+              登 录
+            </n-button>
+          </n-form-item>
+        </n-form>
+      </n-card>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.login-container {
+.login-page {
+  width: 100%;
+  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
-  background: #ffffff;
+  position: relative;
+  overflow: hidden;
+  background: var(--page-bg);
+}
+
+.login-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(24, 160, 88, 0.06), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(24, 160, 88, 0.04), transparent);
+  pointer-events: none;
+}
+
+.login-card-wrap {
+  position: relative;
+  z-index: 1;
+  width: 400px;
+  animation: loginIn 0.5s ease both;
+}
+
+@keyframes loginIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.login-brand-icon {
+  font-size: 28px;
+  color: var(--accent);
+}
+
+.login-brand-text {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-h);
+  letter-spacing: 0.02em;
 }
 
 .login-card {
-  width: 380px;
   border-radius: 14px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.04),
+    0 4px 16px rgba(0, 0, 0, 0.06),
+    0 20px 60px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--card-border);
 }
 
 .login-card :deep(.n-card__content) {
-  padding-top: 0;
-}
-
-.login-card :deep(.n-card-header) {
-  text-align: center;
-  padding-bottom: 18px;
-}
-
-.login-card :deep(.n-card-header__main) {
-  font-size: 20px;
-  font-weight: 600;
-  color: #0f172a;
-  line-height: 1.6;
-}
-
-.login-card :deep(.n-form-item .n-form-item-label) {
-  justify-content: flex-end;
-  color: #475569;
-  font-weight: 500;
-  line-height: 40px;
+  padding: 28px 32px 24px;
 }
 
 .login-card :deep(.n-form-item) {
-  margin-bottom: 10px;
+  margin-bottom: 18px;
 }
 
-.login-card :deep(.n-input) {
-  --n-border-radius: 6px;
+.login-card :deep(.n-form-item:last-child) {
+  margin-bottom: 0;
+  margin-top: 8px;
 }
 
-.login-card :deep(.n-input__input-el),
-.login-card :deep(.n-input__textarea-el) {
-  line-height: 1.6;
+.login-card :deep(.n-form-item-label) {
+  color: var(--text);
+  font-weight: 500;
 }
 
-.login-card :deep(.n-button) {
-  --n-border-radius: 6px;
-  --n-color: #2563eb;
-  --n-color-hover: #1d4ed8;
-  --n-color-pressed: #1e40af;
-  height: 40px;
+.login-card :deep(.n-button--primary-type) {
+  --n-height: 44px;
+  --n-font-size: 15px;
+  --n-font-weight: 600;
+  letter-spacing: 0.3em;
 }
 </style>

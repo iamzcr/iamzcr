@@ -96,8 +96,8 @@ onMounted(loadSettings)
 </script>
 
 <template>
-  <div>
-    <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+  <div class="page-wrap">
+    <div class="page-toolbar" style="justify-content: space-between; align-items: center;">
       <div style="color: #666; font-size: 13px;">
         微信公众号配置 Key: wechat_app_id, wechat_app_secret, wechat_token, wechat_aes_key, wechat_original_id
       </div>

@@ -69,7 +69,7 @@ onMounted(loadMessages)
 </script>
 
 <template>
-  <div>
+  <div class="page-wrap">
     <n-data-table :columns="columns" :data="messages" :loading="loading" remote :pagination="pagination" @update:page="pagination.page = $event; loadMessages()" />
     <n-modal v-model:show="showModal" preset="card" title="留言管理" style="width: 500px">
       <n-form :model="editingMessage">

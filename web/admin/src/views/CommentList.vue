@@ -51,7 +51,7 @@ onMounted(loadComments)
 </script>
 
 <template>
-  <div>
+  <div class="page-wrap">
     <n-data-table :columns="columns" :data="comments" :loading="loading" remote :pagination="pagination" @update:page="pagination.page = $event; loadComments()" />
   </div>
 </template>

@@ -76,8 +76,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
-    <div style="margin-bottom: 16px; display: flex; justify-content: flex-end;">
+  <div class="page-wrap">
+    <div class="page-toolbar">
       <n-button type="primary" @click="openEdit()">新建目录</n-button>
     </div>
     <n-data-table :columns="columns" :data="directories" :loading="loading" remote :pagination="pagination" @update:page="pagination.page = $event; loadDirectories()" />
