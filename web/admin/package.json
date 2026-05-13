@@ -10,6 +10,9 @@
   },
   "dependencies": {
     "@kangc/v-md-editor": "^2.3.18",
+    "@tiptap/extension-underline": "^3.23.2",
+    "@tiptap/starter-kit": "^3.23.2",
+    "@tiptap/vue-3": "^3.23.2",
     "@types/markdown-it": "^14.1.2",
     "@vueuse/core": "^14.2.1",
     "@vueuse/integrations": "^14.2.1",
@@ -18,11 +21,13 @@
     "highlight.js": "^11.11.1",
     "markdown-it": "^14.1.1",
     "naive-ui": "^2.44.1",
+    "turndown": "^7.2.4",
     "vue": "^3.5.30",
     "vue-router": "^5.0.4"
   },
   "devDependencies": {
     "@types/node": "^24.12.0",
+    "@types/turndown": "^5.0.6",
     "@vitejs/plugin-vue": "^6.0.5",
     "@vue/tsconfig": "^0.9.0",
     "typescript": "~5.9.3",
