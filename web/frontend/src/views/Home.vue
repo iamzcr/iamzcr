@@ -15,12 +15,17 @@ const allTags = ref<any[]>([])
 const loading = ref(false)
 
 const cdnUrl = ref('')
+const loadedCovers = ref<Set<number>>(new Set())
 
 function getFullUrl(path: string) {
   if (!path) return ''
   if (path.startsWith('http://') || path.startsWith('https://')) return path
   if (!cdnUrl.value) return path
   return cdnUrl.value.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '')
+}
+
+function onCoverLoad(id: number) {
+  loadedCovers.value = new Set(loadedCovers.value).add(id)
 }
 
 const currentType = ref('')
@@ -31,6 +36,7 @@ const totalArticles = ref(0)
 
 async function loadData() {
   loading.value = true
+  loadedCovers.value = new Set()
   try {
     updateCurrentFilter()
 
@@ -167,13 +173,23 @@ onMounted(() => {
           <n-empty v-if="!loading && articles.length === 0" description="暂无文章" />
           <div class="articles-list">
             <div 
-              v-for="article in articles" 
+              v-for="(article, index) in articles" 
               :key="article.id" 
               class="article-card"
+              :style="{ '--i': index }"
               @click="goToArticle(article.id)"
             >
               <div class="article-cover" v-if="article.thumb">
-                <img :src="getFullUrl(article.thumb)" :alt="article.title" />
+                <div class="cover-shimmer"></div>
+                <img
+                  :src="getFullUrl(article.thumb)"
+                  :alt="article.title"
+                  loading="lazy"
+                  decoding="async"
+                  :class="{ 'cover-loaded': loadedCovers.has(article.id) }"
+                  @load="onCoverLoad(article.id)"
+                />
+                <div class="cover-gradient"></div>
               </div>
               <div class="article-body">
                 <div class="article-meta">
@@ -225,7 +241,6 @@ onMounted(() => {
 .layout {
   display: flex;
   gap: 32px;
-  padding: 0 32px;
   width: 100%;
 }
 
@@ -234,30 +249,28 @@ onMounted(() => {
   min-width: 0;
 }
 
-.content-header {
-  margin-bottom: 24px;
-}
-
 .sidebar {
   width: 320px;
   flex-shrink: 0;
 }
 
 .sidebar-section {
-  background: #fff;
-  border-radius: 12px;
+  background: var(--card-bg);
+  border-radius: var(--radius);
   padding: 20px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
 }
 
 .section-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-h);
   margin: 0 0 16px 0;
   padding-bottom: 12px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border);
+  letter-spacing: 0.01em;
 }
 
 .latest-articles {
@@ -269,7 +282,7 @@ onMounted(() => {
 .latest-item {
   cursor: pointer;
   padding: 8px 0;
-  border-bottom: 1px solid #f5f5f5;
+  border-bottom: 1px solid var(--border);
   transition: all 0.2s;
 }
 
@@ -278,12 +291,12 @@ onMounted(() => {
 }
 
 .latest-item:hover .latest-title {
-  color: #18a058;
+  color: var(--accent);
 }
 
 .latest-title {
   font-size: 14px;
-  color: #333;
+  color: var(--text-h);
   margin-bottom: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -292,7 +305,7 @@ onMounted(() => {
 
 .latest-meta {
   font-size: 12px;
-  color: #999;
+  color: var(--text-muted);
 }
 
 .tag-cloud {
@@ -313,7 +326,7 @@ onMounted(() => {
 .category-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .category-item {
@@ -321,28 +334,30 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .category-item:hover {
-  background: #f5f7fa;
+  background: var(--accent-bg);
+  color: var(--accent);
 }
 
 .category-name {
   font-size: 14px;
-  color: #333;
+  color: var(--text);
 }
 
 .category-count {
   font-size: 12px;
-  color: #999;
-  background: #f0f0f0;
+  color: var(--text-muted);
+  background: var(--border);
   padding: 2px 8px;
   border-radius: 10px;
 }
 
+/* Article cards */
 .articles-list {
   display: flex;
   flex-direction: column;
@@ -351,66 +366,130 @@ onMounted(() => {
 
 .article-card {
   display: flex;
-  background: #fff;
-  border-radius: 16px;
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  animation: cardIn 0.45s ease both;
+  animation-delay: calc(var(--i) * 55ms + 0.05s);
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .article-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--accent-border);
 }
 
+/* Cover */
 .article-cover {
   width: 400px;
   min-width: 400px;
   height: 240px;
   overflow: hidden;
+  position: relative;
+  background: var(--border);
+}
+
+.article-cover .cover-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.15) 30%,
+    rgba(255, 255, 255, 0.25) 50%,
+    rgba(255, 255, 255, 0.15) 70%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  z-index: 1;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 .article-cover img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s;
+  transition: transform 0.5s ease, opacity 0.4s ease;
+  opacity: 0;
+  position: relative;
+  z-index: 0;
 }
 
-.article-card:hover .article-cover img {
+.article-cover img.cover-loaded {
+  opacity: 1;
+}
+
+.article-card:hover .article-cover img.cover-loaded {
   transform: scale(1.05);
 }
 
+.article-cover .cover-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 50%,
+    rgba(0, 0, 0, 0.03) 80%,
+    rgba(0, 0, 0, 0.12) 100%
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Body */
 .article-body {
   flex: 1;
-  padding: 24px;
+  padding: 24px 28px;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .article-meta {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 12px;
 }
 
 .article-date {
-  color: #999;
+  color: var(--text-muted);
   font-size: 13px;
 }
 
 .article-title {
   font-size: 22px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-h);
   margin: 0 0 12px 0;
   line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .article-summary {
-  color: #666;
+  color: var(--text);
   font-size: 14px;
   line-height: 1.7;
   margin: 0 0 16px 0;
@@ -462,6 +541,7 @@ onMounted(() => {
   
   .article-cover {
     width: 100%;
+    min-width: 100%;
     height: 220px;
   }
 }
@@ -470,15 +550,11 @@ onMounted(() => {
   .sidebar {
     grid-template-columns: 1fr;
   }
-  
-  .layout {
-    padding: 0 16px;
-  }
 }
 
 .pagination-wrapper {
   display: flex;
   justify-content: center;
-  padding: 32px 0;
+  padding: 36px 0;
 }
 </style>

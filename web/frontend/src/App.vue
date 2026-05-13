@@ -71,7 +71,11 @@ onMounted(loadMenuData)
     </nav>
     
     <main class="main-wrapper">
-      <router-view />
+      <router-view v-slot="{ Component }">
+        <transition name="page" mode="out-in">
+          <component :is="Component" :key="$route.fullPath" />
+        </transition>
+      </router-view>
     </main>
     
     <footer class="site-footer">
@@ -89,16 +93,18 @@ onMounted(loadMenuData)
 </template>
 
 <style>
-* {
+*,
+*::before,
+*::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background: #f0f2f5;
-  color: #333;
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
 }
 
 .app-container {
@@ -108,15 +114,17 @@ body {
 }
 
 .navbar {
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-sm);
   position: sticky;
   top: 0;
   z-index: 1000;
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
 }
 
 .nav-content {
-  max-width: 100%;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 32px;
   height: 64px;
@@ -145,7 +153,9 @@ body {
 .logo-text {
   font-size: 22px;
   font-weight: 700;
-  color: #333;
+  color: var(--text-h);
+  font-family: var(--serif);
+  letter-spacing: 0.02em;
 }
 
 .nav-menu {
@@ -156,14 +166,14 @@ body {
 
 .nav-link {
   font-size: 15px;
-  color: #555;
+  color: var(--text);
   text-decoration: none;
   padding: 8px 0;
   transition: color 0.2s;
 }
 
 .nav-link:hover {
-  color: #18a058;
+  color: var(--accent);
 }
 
 .nav-dropdown {
@@ -175,28 +185,35 @@ body {
   position: absolute;
   top: 100%;
   left: 0;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
   min-width: 160px;
-  padding: 8px 0;
+  padding: 6px 0;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.2s, transform 0.2s;
 }
 
 .nav-dropdown:hover .dropdown-content {
   display: block;
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .dropdown-item {
   display: block;
   padding: 10px 20px;
-  color: #555;
+  color: var(--text);
   text-decoration: none;
   transition: all 0.2s;
+  font-size: 14px;
 }
 
 .dropdown-item:hover {
-  background: #f5f7fa;
-  color: #18a058;
+  background: var(--accent-bg);
+  color: var(--accent);
 }
 
 .nav-right {
@@ -211,12 +228,25 @@ body {
 
 .main-wrapper {
   flex: 1;
-  padding: 24px;
+  max-width: 1440px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 28px 32px;
+}
+
+@media (max-width: 600px) {
+  .main-wrapper {
+    padding: 20px 16px;
+  }
+  
+  .nav-content {
+    padding: 0 16px;
+  }
 }
 
 .site-footer {
-  background: #fff;
-  border-top: 1px solid #eee;
+  background: var(--card-bg);
+  border-top: 1px solid var(--border);
   padding: 24px;
 }
 
@@ -231,24 +261,43 @@ body {
   justify-content: center;
   gap: 16px;
   margin-bottom: 8px;
-}
-
-.footer-links a {
-  color: #666;
-  text-decoration: none;
+  color: var(--text-muted);
   font-size: 14px;
 }
 
+.footer-links a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+
 .footer-links a:hover {
-  color: #18a058;
+  color: var(--accent);
 }
 
 .footer-links .divider {
-  color: #ddd;
+  color: var(--border);
 }
 
 .footer-copy {
-  color: #999;
+  color: var(--text-muted);
   font-size: 13px;
+}
+
+/* Page transition */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 </style>
