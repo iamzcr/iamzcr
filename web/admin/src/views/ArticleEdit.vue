@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { NForm, NFormItem, NInput, NButton, NCard, NSwitch, NInputNumber, NSelect, NSpace, NGrid, NGridItem, NModal, NImage } from 'naive-ui'
+import { NForm, NFormItem, NInput, NButton, NCard, NSwitch, NInputNumber, NSelect, NSpace, NGrid, NGridItem, NModal, NImage, NRadioGroup, NRadioButton } from 'naive-ui'
+import { Editor } from '@tiptap/core'
+import StarterKit from '@tiptap/starter-kit'
+import Underline from '@tiptap/extension-underline'
 import { articleApi, categoryApi, directoryApi, tagsApi, attachApi, websiteApi, platformApi } from '../api'
+import { markdownToHtml, htmlToMarkdown } from '../utils/markdown'
 
 const route = useRoute()
 const router = useRouter()
@@ -40,7 +44,47 @@ const coverImages = ref<any[]>([])
 const coverLoading = ref(false)
 const cdnUrl = ref('')
 
+const editorMode = ref<'markdown' | 'richtext'>('markdown')
+const richEditor = ref<Editor | null>(null)
+const richEditorDom = ref<any>(null)
+
 const platformOptions = computed(() => platforms.value.map((p: any) => ({ label: p.name, value: p.id })))
+
+function initRichEditor() {
+  if (richEditor.value) {
+    richEditor.value.destroy()
+    richEditor.value = null
+  }
+  nextTick(() => {
+    richEditor.value = new Editor({
+      element: richEditorDom.value,
+      extensions: [StarterKit, Underline],
+      content: markdownToHtml(form.value.content),
+      onUpdate: ({ editor }) => {
+        form.value.content = htmlToMarkdown(editor.getHTML())
+      },
+    })
+  })
+}
+
+function destroyRichEditor() {
+  if (richEditor.value) {
+    richEditor.value.destroy()
+    richEditor.value = null
+  }
+}
+
+function switchEditorMode() {
+  if (editorMode.value === 'richtext') {
+    initRichEditor()
+  } else {
+    destroyRichEditor()
+  }
+}
+
+watch(editorMode, () => {
+  switchEditorMode()
+})
 
 function getFullUrl(path: string) {
   if (!path) return ''
@@ -128,6 +172,10 @@ async function save() {
 onMounted(() => {
   loadData()
   loadArticle()
+})
+
+onBeforeUnmount(() => {
+  destroyRichEditor()
 })
 </script>
 
@@ -218,8 +266,37 @@ onMounted(() => {
       </n-form-item>
       </div>
       
+      <n-form-item label="编辑模式" path="editorMode">
+        <n-radio-group v-model:value="editorMode">
+          <n-radio-button value="markdown">Markdown</n-radio-button>
+          <n-radio-button value="richtext">富文本</n-radio-button>
+        </n-radio-group>
+      </n-form-item>
+
       <n-form-item label="内容" path="content" class="content-form-item">
-        <v-md-editor v-model="form.content" height="68vh"></v-md-editor>
+        <v-md-editor v-if="editorMode === 'markdown'" v-model="form.content" height="68vh"></v-md-editor>
+        <div v-else class="richtext-editor">
+          <div class="richtext-toolbar">
+            <button class="toolbar-btn" title="加粗" @click.prevent="richEditor?.chain().focus().toggleBold().run()" :class="{ active: richEditor?.isActive('bold') }"><b>B</b></button>
+            <button class="toolbar-btn" title="斜体" @click.prevent="richEditor?.chain().focus().toggleItalic().run()" :class="{ active: richEditor?.isActive('italic') }"><i>I</i></button>
+            <button class="toolbar-btn" title="下划线" @click.prevent="richEditor?.chain().focus().toggleUnderline().run()" :class="{ active: richEditor?.isActive('underline') }"><u>U</u></button>
+            <button class="toolbar-btn" title="删除线" @click.prevent="richEditor?.chain().focus().toggleStrike().run()" :class="{ active: richEditor?.isActive('strike') }"><s>S</s></button>
+            <span class="toolbar-divider"></span>
+            <button class="toolbar-btn" title="标题1" @click.prevent="richEditor?.chain().focus().toggleHeading({ level: 1 }).run()" :class="{ active: richEditor?.isActive('heading', { level: 1 }) }">H1</button>
+            <button class="toolbar-btn" title="标题2" @click.prevent="richEditor?.chain().focus().toggleHeading({ level: 2 }).run()" :class="{ active: richEditor?.isActive('heading', { level: 2 }) }">H2</button>
+            <button class="toolbar-btn" title="标题3" @click.prevent="richEditor?.chain().focus().toggleHeading({ level: 3 }).run()" :class="{ active: richEditor?.isActive('heading', { level: 3 }) }">H3</button>
+            <span class="toolbar-divider"></span>
+            <button class="toolbar-btn" title="无序列表" @click.prevent="richEditor?.chain().focus().toggleBulletList().run()" :class="{ active: richEditor?.isActive('bulletList') }">•</button>
+            <button class="toolbar-btn" title="有序列表" @click.prevent="richEditor?.chain().focus().toggleOrderedList().run()" :class="{ active: richEditor?.isActive('orderedList') }">1.</button>
+            <button class="toolbar-btn" title="引用" @click.prevent="richEditor?.chain().focus().toggleBlockquote().run()" :class="{ active: richEditor?.isActive('blockquote') }">"</button>
+            <button class="toolbar-btn" title="代码块" @click.prevent="richEditor?.chain().focus().toggleCodeBlock().run()" :class="{ active: richEditor?.isActive('codeBlock') }">&lt;/&gt;</button>
+            <button class="toolbar-btn" title="分割线" @click.prevent="richEditor?.chain().focus().setHorizontalRule().run()">—</button>
+            <span class="toolbar-divider"></span>
+            <button class="toolbar-btn" title="撤销" @click.prevent="richEditor?.chain().focus().undo().run()">↩</button>
+            <button class="toolbar-btn" title="重做" @click.prevent="richEditor?.chain().focus().redo().run()">↪</button>
+          </div>
+          <div ref="richEditorDom" class="richtext-content"></div>
+        </div>
       </n-form-item>
       
       <n-form-item>
@@ -275,5 +352,122 @@ onMounted(() => {
 .content-form-item :deep(.n-form-item-blank) {
   display: block;
   width: 100%;
+}
+
+.richtext-editor {
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.richtext-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 6px 8px;
+  background: #fafafa;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.richtext-toolbar .toolbar-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  transition: background 0.15s;
+}
+
+.richtext-toolbar .toolbar-btn:hover {
+  background: #e8e8e8;
+}
+
+.richtext-toolbar .toolbar-btn.active {
+  background: #d0e0ff;
+  color: #2080f0;
+}
+
+.richtext-toolbar .toolbar-divider {
+  width: 1px;
+  background: #ddd;
+  margin: 0 4px;
+}
+
+.richtext-content {
+  min-height: 68vh;
+  padding: 12px 16px;
+  outline: none;
+}
+
+.richtext-content :deep(.ProseMirror) {
+  min-height: 66vh;
+  outline: none;
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+.richtext-content :deep(.ProseMirror p) {
+  margin: 0 0 8px 0;
+}
+
+.richtext-content :deep(.ProseMirror h1) {
+  font-size: 24px;
+  margin: 16px 0 8px 0;
+}
+
+.richtext-content :deep(.ProseMirror h2) {
+  font-size: 20px;
+  margin: 14px 0 8px 0;
+}
+
+.richtext-content :deep(.ProseMirror h3) {
+  font-size: 17px;
+  margin: 12px 0 6px 0;
+}
+
+.richtext-content :deep(.ProseMirror blockquote) {
+  border-left: 3px solid #ddd;
+  padding-left: 12px;
+  margin: 8px 0;
+  color: #666;
+}
+
+.richtext-content :deep(.ProseMirror ul),
+.richtext-content :deep(.ProseMirror ol) {
+  padding-left: 24px;
+  margin: 4px 0;
+}
+
+.richtext-content :deep(.ProseMirror code) {
+  background: #f5f5f5;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 13px;
+}
+
+.richtext-content :deep(.ProseMirror pre) {
+  background: #282c34;
+  color: #abb2bf;
+  padding: 12px 16px;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+
+.richtext-content :deep(.ProseMirror pre code) {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+.richtext-content :deep(.ProseMirror hr) {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 16px 0;
 }
 </style>
