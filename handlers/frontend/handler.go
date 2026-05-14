@@ -194,13 +194,18 @@ func (h *FrontendHandler) GetWebsite(c *gin.Context) {
 // GetMessages godoc
 //
 //	@Summary		留言列表
-//	@Description	获取所有留言记录
+// @Description	获取留言记录（分页）
 //	@Tags			Frontend API
 //	@Produce		json
-//	@Success		200	{object}	MessageListResponse
+//	@Param			page		query		int	false	"页码"	default(1)
+//	@Param			page_size	query		int	false	"每页数量"	default(10)
+//	@Success		200			{object}	MessageListResponse
 //	@Router			/messages [get]
 func (h *FrontendHandler) GetMessages(c *gin.Context) {
-	messages, err := h.messageSvc.List()
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+
+	messages, total, err := h.messageSvc.List(page, pageSize)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
 		return
@@ -211,7 +216,10 @@ func (h *FrontendHandler) GetMessages(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
 		"message": "success",
-		"data":    messages,
+		"data": gin.H{
+			"list":  messages,
+			"total": total,
+		},
 	})
 }
 

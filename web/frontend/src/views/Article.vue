@@ -23,6 +23,8 @@ const category = ref<any>(null)
 const directory = ref<any>(null)
 const tags = ref<any[]>([])
 const readCount = ref(0)
+const prevArticle = ref<any>(null)
+const nextArticle = ref<any>(null)
 const loading = ref(false)
 
 const latestArticles = ref<any[]>([])
@@ -47,6 +49,8 @@ async function loadArticle() {
     directory.value = data.directory || null
     tags.value = data.tags || []
     readCount.value = data.read_count || 0
+    prevArticle.value = data.prev_article || null
+    nextArticle.value = data.next_article || null
   } catch {
     article.value = null
   } finally {
@@ -378,6 +382,17 @@ watch(() => route.params.id, () => {
           <div class="markdown-content" v-html="renderedContent"></div>
           <div class="article-footer">
             <n-button @click="router.push('/')">返回首页</n-button>
+          </div>
+          <div class="article-nav" v-if="prevArticle || nextArticle">
+            <div class="nav-item" v-if="prevArticle" @click="goToArticle(prevArticle.id)">
+              <span class="nav-label">上一篇</span>
+              <span class="nav-title">{{ prevArticle.title }}</span>
+            </div>
+            <div class="nav-spacer"></div>
+            <div class="nav-item nav-item-next" v-if="nextArticle" @click="goToArticle(nextArticle.id)">
+              <span class="nav-label">下一篇</span>
+              <span class="nav-title">{{ nextArticle.title }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -781,5 +796,51 @@ watch(() => route.params.id, () => {
   .sidebar {
     width: 100%;
   }
+}
+
+.article-nav {
+  display: flex;
+  align-items: stretch;
+  margin-top: 32px;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+}
+
+.nav-item {
+  flex: 1;
+  cursor: pointer;
+  padding: 12px 16px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.nav-item:hover {
+  background: var(--bg-secondary);
+}
+
+.nav-item-next {
+  text-align: right;
+}
+
+.nav-label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.nav-title {
+  display: block;
+  font-size: 14px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-spacer {
+  width: 1px;
+  background: var(--border);
+  margin: 0 16px;
 }
 </style>

@@ -11,10 +11,13 @@ func NewMessageService() *MessageService {
 	return &MessageService{}
 }
 
-func (s *MessageService) List() ([]models.Message, error) {
+func (s *MessageService) List(page, pageSize int) ([]models.Message, int64, error) {
 	var messages []models.Message
-	err := models.DB.Order("create_time DESC").Find(&messages).Error
-	return messages, err
+	var total int64
+
+	models.DB.Model(&models.Message{}).Count(&total)
+	err := models.DB.Order("create_time DESC").Offset((page - 1) * pageSize).Limit(pageSize).Find(&messages).Error
+	return messages, total, err
 }
 
 func (s *MessageService) Create(name, email, url, content, ip string) (*models.Message, error) {
