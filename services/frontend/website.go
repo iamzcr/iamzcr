@@ -12,7 +12,7 @@ func NewWebsiteService() *WebsiteService {
 
 func (s *WebsiteService) List() (map[string]string, error) {
 	var websites []models.Website
-	if err := models.DB.Find(&websites).Error; err != nil {
+	if err := models.DB.Where("is_to_frontend = ?", 1).Find(&websites).Error; err != nil {
 		return nil, err
 	}
 	data := make(map[string]string)

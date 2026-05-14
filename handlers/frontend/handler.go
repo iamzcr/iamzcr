@@ -159,7 +159,7 @@ func (h *FrontendHandler) GetTags(c *gin.Context) {
 // GetWebsite godoc
 //
 //	@Summary		网站设置
-//	@Description	获取网站配置信息（键值对形式，如站点名称、CDN地址等）
+//	@Description	获取前端可见的网站配置信息（is_to_frontend=1 的键值对，如站点名称、CDN地址等）
 //	@Tags			Frontend API
 //	@Produce		json
 //	@Success		200	{object}	WebsiteResponse

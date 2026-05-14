@@ -44,6 +44,16 @@ func (h *WebsiteHandler) Get(c *gin.Context) {
 }
 
 func (h *WebsiteHandler) Update(c *gin.Context) {
+	var items []svc.WebsiteInput
+	if err := c.ShouldBindJSON(&items); err == nil && len(items) > 0 {
+		if err := h.svc.UpsertAll(items); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"code": 0, "message": "success"})
+		return
+	}
+
 	var input map[string]string
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": err.Error()})
@@ -55,10 +65,7 @@ func (h *WebsiteHandler) Update(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"code":    0,
-		"message": "success",
-	})
+	c.JSON(http.StatusOK, gin.H{"code": 0, "message": "success"})
 }
 
 func (h *WebsiteHandler) Delete(c *gin.Context) {

@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
-import { NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSpace, useMessage } from 'naive-ui'
+import { NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSpace, NSwitch, NTag, useMessage } from 'naive-ui'
 import { websiteApi } from '../api'
 
 const message = useMessage()
 const websites = ref<any[]>([])
 const loading = ref(false)
 const showModal = ref(false)
-const editingSetting = ref({ id: 0, key: '', value: '' })
+const editingSetting = ref({ id: 0, key: '', value: '', is_to_frontend: 1 })
 
 function formatDate(time: number | string) {
   if (!time) return '-'
@@ -26,6 +26,7 @@ const columns = [
   { title: 'ID', key: 'id', width: 60 },
   { title: 'Key', key: 'key', width: 200, ellipsis: { tooltip: true } },
   { title: 'Value', key: 'value', ellipsis: { tooltip: true } },
+  { title: '前端可见', key: 'is_to_frontend', width: 90, render: (row: any) => h(NTag, { type: row.is_to_frontend === 1 ? 'success' : 'default', size: 'small' }, () => row.is_to_frontend === 1 ? '是' : '否') },
   { title: '创建时间', key: 'create_time', width: 180, render: (row: any) => formatDate(row.create_time) },
   { title: '操作', key: 'actions', width: 150, render: (row: any) => h(NSpace, () => [
     h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑'),
@@ -44,7 +45,7 @@ async function loadSettings() {
 }
 
 function openEdit(row?: any) {
-  editingSetting.value = row ? { id: row.id, key: row.key, value: String(row.value) } : { id: 0, key: '', value: '' }
+  editingSetting.value = row ? { id: row.id, key: row.key, value: String(row.value), is_to_frontend: row.is_to_frontend ?? 1 } : { id: 0, key: '', value: '', is_to_frontend: 1 }
   showModal.value = true
 }
 
@@ -79,7 +80,7 @@ async function saveSetting() {
     message.error('请输入Key')
     return
   }
-  const data: Record<string, string> = { [editingSetting.value.key]: editingSetting.value.value }
+  const data = [{ key: editingSetting.value.key, value: editingSetting.value.value, is_to_frontend: editingSetting.value.is_to_frontend }]
   await websiteApi.update(data)
   message.success('保存成功')
   showModal.value = false
@@ -111,6 +112,12 @@ onMounted(loadSettings)
         </n-form-item>
         <n-form-item label="Value">
           <n-input v-model:value="editingSetting.value" :placeholder="getValuePlaceholder(editingSetting.key)" />
+        </n-form-item>
+        <n-form-item label="前端可见">
+          <n-switch v-model:value="editingSetting.is_to_frontend" :checked-value="1" :unchecked-value="0">
+            <template #checked>是</template>
+            <template #unchecked>否</template>
+          </n-switch>
         </n-form-item>
       </n-form>
       <template #footer>
