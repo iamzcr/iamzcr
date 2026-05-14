@@ -8,6 +8,10 @@ definitions:
         $ref: '#/definitions/models.Category'
       directory:
         $ref: '#/definitions/models.Directory'
+      next_article:
+        $ref: '#/definitions/models.Article'
+      prev_article:
+        $ref: '#/definitions/models.Article'
       read_count:
         type: integer
       tags:
@@ -64,14 +68,21 @@ definitions:
       message:
         type: string
     type: object
+  frontend.MessageListData:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/models.Message'
+        type: array
+      total:
+        type: integer
+    type: object
   frontend.MessageListResponse:
     properties:
       code:
         type: integer
       data:
-        items:
-          $ref: '#/definitions/models.Message'
-        type: array
+        $ref: '#/definitions/frontend.MessageListData'
       message:
         type: string
     type: object
@@ -372,7 +383,18 @@ paths:
       - Frontend API
   /messages:
     get:
-      description: 获取所有留言记录
+      description: 获取留言记录（分页）
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
       produces:
       - application/json
       responses:

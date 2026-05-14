@@ -27,6 +27,6 @@ export const websiteApi = {
 }
 
 export const messageApi = {
-  list: () => api.get('/messages'),
+  list: (params?: any) => api.get('/messages', { params }),
   create: (data: any) => api.post('/messages', data)
 }

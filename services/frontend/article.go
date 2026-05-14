@@ -88,11 +88,13 @@ func (s *ArticleService) GetByID(id int) map[string]interface{} {
 	}
 
 	return map[string]interface{}{
-		"article":    article,
-		"category":   category,
-		"directory":  directory,
-		"tags":       tags,
-		"read_count": s.getReadCount(article.ID),
+		"article":      article,
+		"category":     category,
+		"directory":    directory,
+		"tags":         tags,
+		"read_count":   s.getReadCount(article.ID),
+		"prev_article": s.getPrevArticle(article.ID),
+		"next_article": s.getNextArticle(article.ID),
 	}
 }
 
@@ -100,4 +102,22 @@ func (s *ArticleService) getReadCount(aid int) int64 {
 	var count int64
 	models.DB.Model(&models.Read{}).Where("aid = ?", aid).Count(&count)
 	return count
+}
+
+func (s *ArticleService) getPrevArticle(id int) *models.Article {
+	var article models.Article
+	err := models.DB.Where("id < ? AND status = 1", id).Order("id DESC").First(&article).Error
+	if err != nil {
+		return nil
+	}
+	return &article
+}
+
+func (s *ArticleService) getNextArticle(id int) *models.Article {
+	var article models.Article
+	err := models.DB.Where("id > ? AND status = 1", id).Order("id ASC").First(&article).Error
+	if err != nil {
+		return nil
+	}
+	return &article
 }

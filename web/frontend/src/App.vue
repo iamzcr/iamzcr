@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { NInput, NButton } from 'naive-ui'
+import { NInput, NButton, NMessageProvider } from 'naive-ui'
 import { categoryApi, tagsApi } from './api'
 
 const router = useRouter()
@@ -153,11 +153,13 @@ onMounted(() => {
     </nav>
     
     <main class="main-wrapper">
-      <router-view v-slot="{ Component }">
-        <transition name="page" mode="out-in">
-          <component :is="Component" :key="$route.fullPath" />
-        </transition>
-      </router-view>
+      <n-message-provider>
+        <router-view v-slot="{ Component }">
+          <transition name="page" mode="out-in">
+            <component :is="Component" :key="$route.fullPath" />
+          </transition>
+        </router-view>
+      </n-message-provider>
     </main>
     
     <footer class="site-footer">
