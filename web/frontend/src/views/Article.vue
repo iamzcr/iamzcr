@@ -154,7 +154,7 @@ function enhanceCodeBlocks() {
     copyBtn.onclick = (e) => {
       e.stopPropagation()
       const code = pre.querySelector('code')?.textContent || ''
-      navigator.clipboard.writeText(code)
+      copyToClipboard(code)
       copyBtn.classList.add('copied')
       copyLabel.textContent = '已复制'
       setTimeout(() => {
@@ -249,6 +249,31 @@ function makeChevronIcon(): SVGElement {
   svg.appendChild(poly)
 
   return svg
+}
+
+function copyToClipboard(text: string) {
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).catch(() => {
+      fallbackCopy(text)
+    })
+  } else {
+    fallbackCopy(text)
+  }
+}
+
+function fallbackCopy(text: string) {
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.style.position = 'fixed'
+  textarea.style.left = '-9999px'
+  textarea.style.top = '-9999px'
+  document.body.appendChild(textarea)
+  textarea.focus()
+  textarea.select()
+  try {
+    document.execCommand('copy')
+  } catch { /* ignore */ }
+  document.body.removeChild(textarea)
 }
 
 onMounted(() => {

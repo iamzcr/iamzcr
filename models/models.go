@@ -183,6 +183,7 @@ type Attach struct {
 	ID         int    `gorm:"primaryKey;column:id" json:"id"`
 	Name       string `gorm:"column:name;size:255" json:"name"`
 	Link       string `gorm:"column:link;size:255" json:"link"`
+	CdnLink    string `gorm:"column:cdn_link;size:500" json:"cdn_link"`
 	Path       string `gorm:"column:path;size:255" json:"path"`
 	Status     int    `gorm:"column:status" json:"status"`
 	Type       int    `gorm:"column:type" json:"type"`
