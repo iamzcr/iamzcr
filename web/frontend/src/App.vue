@@ -62,8 +62,6 @@ onMounted(() => {
           </router-link>
           <div class="nav-menu">
             <router-link to="/" class="nav-link" @click="closeMobileMenu">首页</router-link>
-            <router-link to="/messages" class="nav-link" @click="closeMobileMenu">留言</router-link>
-            <router-link to="/about" class="nav-link" @click="closeMobileMenu">关于我</router-link>
             <div class="nav-dropdown">
               <span class="nav-link">分类 ▾</span>
               <div class="dropdown-content">
@@ -77,6 +75,8 @@ onMounted(() => {
                 </router-link>
               </div>
             </div>
+            <router-link to="/messages" class="nav-link" @click="closeMobileMenu">留言</router-link>
+            <router-link to="/about" class="nav-link" @click="closeMobileMenu">关于我</router-link>
           </div>
         </div>
         <div class="nav-right">
