@@ -139,6 +139,65 @@
                 }
             }
         },
+        "/messages": {
+            "get": {
+                "description": "获取所有留言记录",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Frontend API"
+                ],
+                "summary": "留言列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/frontend.MessageListResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "提交一条新留言，邮箱和内容为必填",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Frontend API"
+                ],
+                "summary": "提交留言",
+                "parameters": [
+                    {
+                        "description": "留言内容 {name, email, url, content}",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/frontend.MessageListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/tags": {
             "get": {
                 "description": "获取所有启用的文章标签",
@@ -192,6 +251,9 @@
                 },
                 "directory": {
                     "$ref": "#/definitions/models.Directory"
+                },
+                "read_count": {
+                    "type": "integer"
                 },
                 "tags": {
                     "type": "array",
@@ -270,6 +332,23 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.Directory"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "frontend.MessageListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Message"
                     }
                 },
                 "message": {
@@ -514,6 +593,38 @@
                 },
                 "weight": {
                     "type": "integer"
+                }
+            }
+        },
+        "models.Message": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "create_time": {
+                    "type": "integer"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "ip": {
+                    "type": "string"
+                },
+                "is_reply": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "update_time": {
+                    "type": "integer"
+                },
+                "url": {
+                    "type": "string"
                 }
             }
         },

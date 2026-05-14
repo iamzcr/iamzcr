@@ -22,6 +22,7 @@ const article = ref<any>(null)
 const category = ref<any>(null)
 const directory = ref<any>(null)
 const tags = ref<any[]>([])
+const readCount = ref(0)
 const loading = ref(false)
 
 const latestArticles = ref<any[]>([])
@@ -45,6 +46,7 @@ async function loadArticle() {
     category.value = data.category || null
     directory.value = data.directory || null
     tags.value = data.tags || []
+    readCount.value = data.read_count || 0
   } catch {
     article.value = null
   } finally {
@@ -370,7 +372,7 @@ watch(() => route.params.id, () => {
             <div class="article-info">
               <span v-if="article.author">作者: {{ article.author }}</span>
               <span>发布时间: {{ formatDate(article.create_time) }}</span>
-              <span>阅读: {{ article.weight }}</span>
+              <span>阅读: {{ readCount }}</span>
             </div>
           </div>
           <div class="markdown-content" v-html="renderedContent"></div>

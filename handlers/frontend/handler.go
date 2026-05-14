@@ -2,8 +2,10 @@ package frontend
 
 import (
 	svc "iamzcr/services/frontend"
+	"iamzcr/models"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,6 +16,7 @@ type FrontendHandler struct {
 	directorySvc *svc.DirectoryService
 	tagsSvc      *svc.TagsService
 	websiteSvc   *svc.WebsiteService
+	messageSvc   *svc.MessageService
 }
 
 func NewFrontendHandler(
@@ -22,6 +25,7 @@ func NewFrontendHandler(
 	directorySvc *svc.DirectoryService,
 	tagsSvc *svc.TagsService,
 	websiteSvc *svc.WebsiteService,
+	messageSvc *svc.MessageService,
 ) *FrontendHandler {
 	return &FrontendHandler{
 		articleSvc:   articleSvc,
@@ -29,6 +33,7 @@ func NewFrontendHandler(
 		directorySvc: directorySvc,
 		tagsSvc:      tagsSvc,
 		websiteSvc:   websiteSvc,
+		messageSvc:   messageSvc,
 	}
 }
 
@@ -82,6 +87,14 @@ func (h *FrontendHandler) GetArticle(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "Article not found"})
 		return
 	}
+
+	models.DB.Create(&models.Read{
+		Aid:        id,
+		Referer:    c.Request.Referer(),
+		IP:         c.ClientIP(),
+		CreateTime: int(time.Now().Unix()),
+		UpdateTime: int(time.Now().Unix()),
+	})
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
@@ -175,5 +188,69 @@ func (h *FrontendHandler) GetWebsite(c *gin.Context) {
 		"code":    0,
 		"message": "success",
 		"data":    data,
+	})
+}
+
+// GetMessages godoc
+//
+//	@Summary		留言列表
+//	@Description	获取所有留言记录
+//	@Tags			Frontend API
+//	@Produce		json
+//	@Success		200	{object}	MessageListResponse
+//	@Router			/messages [get]
+func (h *FrontendHandler) GetMessages(c *gin.Context) {
+	messages, err := h.messageSvc.List()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
+		return
+	}
+	if messages == nil {
+		messages = []models.Message{}
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"code":    0,
+		"message": "success",
+		"data":    messages,
+	})
+}
+
+// CreateMessage godoc
+//
+//	@Summary		提交留言
+//	@Description	提交一条新留言，邮箱和内容为必填
+//	@Tags			Frontend API
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		object	true	"留言内容 {name, email, url, content}"
+//	@Success		200		{object}	MessageListResponse
+//	@Failure		400		{object}	map[string]interface{}
+//	@Router			/messages [post]
+func (h *FrontendHandler) CreateMessage(c *gin.Context) {
+	var input map[string]interface{}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "请求格式错误"})
+		return
+	}
+
+	email, _ := input["email"].(string)
+	content, _ := input["content"].(string)
+	if email == "" || content == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "请输入邮箱和留言内容"})
+		return
+	}
+
+	name, _ := input["name"].(string)
+	url, _ := input["url"].(string)
+
+	msg, err := h.messageSvc.Create(name, email, url, content, c.ClientIP())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"code":    0,
+		"message": "success",
+		"data":    []models.Message{*msg},
 	})
 }
