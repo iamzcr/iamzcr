@@ -54,4 +54,4 @@ tmp/
 temp/
 *.tmp
 logs/
-cdn/
+cdn/\ndocs/docs.go
