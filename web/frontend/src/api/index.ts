@@ -25,3 +25,8 @@ export const tagsApi = {
 export const websiteApi = {
   get: () => api.get('/website')
 }
+
+export const messageApi = {
+  list: () => api.get('/messages'),
+  create: (data: any) => api.post('/messages', data)
+}

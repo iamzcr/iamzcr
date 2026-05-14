@@ -8,6 +8,8 @@ definitions:
         $ref: '#/definitions/models.Category'
       directory:
         $ref: '#/definitions/models.Directory'
+      read_count:
+        type: integer
       tags:
         items:
           $ref: '#/definitions/models.Tags'
@@ -58,6 +60,17 @@ definitions:
       data:
         items:
           $ref: '#/definitions/models.Directory'
+        type: array
+      message:
+        type: string
+    type: object
+  frontend.MessageListResponse:
+    properties:
+      code:
+        type: integer
+      data:
+        items:
+          $ref: '#/definitions/models.Message'
         type: array
       message:
         type: string
@@ -220,6 +233,27 @@ definitions:
       weight:
         type: integer
     type: object
+  models.Message:
+    properties:
+      content:
+        type: string
+      create_time:
+        type: integer
+      email:
+        type: string
+      id:
+        type: integer
+      ip:
+        type: string
+      is_reply:
+        type: integer
+      name:
+        type: string
+      update_time:
+        type: integer
+      url:
+        type: string
+    type: object
   models.Tags:
     properties:
       author:
@@ -334,6 +368,45 @@ paths:
           schema:
             $ref: '#/definitions/frontend.DirectoryListResponse'
       summary: 目录列表
+      tags:
+      - Frontend API
+  /messages:
+    get:
+      description: 获取所有留言记录
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/frontend.MessageListResponse'
+      summary: 留言列表
+      tags:
+      - Frontend API
+    post:
+      consumes:
+      - application/json
+      description: 提交一条新留言，邮箱和内容为必填
+      parameters:
+      - description: 留言内容 {name, email, url, content}
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/frontend.MessageListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 提交留言
       tags:
       - Frontend API
   /tags:

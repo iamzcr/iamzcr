@@ -57,7 +57,9 @@ func (s *WebsiteService) upsertOne(key, value string, isToFrontend int) error {
 	var website models.Website
 	if err := models.DB.Where("`key` = ?", key).First(&website).Error; err == nil {
 		website.Value = value
-		website.IsToFrontend = isToFrontend
+		if isToFrontend != 0 || website.IsToFrontend == 0 {
+			website.IsToFrontend = isToFrontend
+		}
 		website.UpdateTime = int(time.Now().Unix())
 		models.DB.Save(&website)
 	} else {

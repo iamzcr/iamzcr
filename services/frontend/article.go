@@ -88,9 +88,16 @@ func (s *ArticleService) GetByID(id int) map[string]interface{} {
 	}
 
 	return map[string]interface{}{
-		"article":   article,
-		"category":  category,
-		"directory": directory,
-		"tags":      tags,
+		"article":    article,
+		"category":   category,
+		"directory":  directory,
+		"tags":       tags,
+		"read_count": s.getReadCount(article.ID),
 	}
+}
+
+func (s *ArticleService) getReadCount(aid int) int64 {
+	var count int64
+	models.DB.Model(&models.Read{}).Where("aid = ?", aid).Count(&count)
+	return count
 }

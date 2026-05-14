@@ -1,4 +1,4 @@
-﻿## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: Frontend article service
 The frontend article service (`services/frontend/article.go`) SHALL provide `ListPublished` and `GetByID` methods for public read access. `ListPublished` SHALL only return articles with `status = 1` and SHALL support filtering by category ID (`cid`), directory ID (`did`), and tag ID (`tid`). The List method SHALL return articles with their associated tags pre-loaded. `GetByID` SHALL return an article with its category, directory, tags, and the read count from `sl_read`.
@@ -20,33 +20,7 @@ The frontend article service (`services/frontend/article.go`) SHALL provide `Lis
 - **WHEN** `ArticleService.GetByID(99999)` is called with a non-existent ID
 - **THEN** it returns `nil, error`
 
-### Requirement: Frontend category service
-The frontend category service (`services/frontend/category.go`) SHALL provide a `List` method that returns all categories with `status = 1` (no pagination).
-
-#### Scenario: List active categories
-- **WHEN** `CategoryService.List()` is called
-- **THEN** it returns all categories where status equals 1
-
-### Requirement: Frontend directory service
-The frontend directory service (`services/frontend/directory.go`) SHALL provide a `List` method that returns all directories with `status = 1` (no pagination).
-
-#### Scenario: List active directories
-- **WHEN** `DirectoryService.List()` is called
-- **THEN** it returns all directories where status equals 1
-
-### Requirement: Frontend tags service
-The frontend tags service (`services/frontend/tags.go`) SHALL provide a `List` method that returns all tags with `status = 1` (no pagination).
-
-#### Scenario: List active tags
-- **WHEN** `TagsService.List()` is called
-- **THEN** it returns all tags where status equals 1
-
-### Requirement: Frontend website service
-The frontend website service (`services/frontend/website.go`) SHALL provide a `List` method that returns all website settings as a `map[string]string` (key-value pairs).
-
-#### Scenario: List website settings as map
-- **WHEN** `WebsiteService.List()` is called
-- **THEN** it returns `map[string]string` where each key is the website setting name and value is its setting value
+## ADDED Requirements
 
 ### Requirement: Frontend message service
 The frontend message service (`services/frontend/message.go`) SHALL provide `List` and `Create` methods. `List` SHALL return all messages ordered by `create_time DESC`. `Create` SHALL insert a new message with name, email, url, content, and IP, and set `is_reply = 0`.
@@ -58,3 +32,14 @@ The frontend message service (`services/frontend/message.go`) SHALL provide `Lis
 #### Scenario: Create a new message
 - **WHEN** `MessageService.Create("name", "a@b.com", "", "Hello", "1.2.3.4")` is called
 - **THEN** a new row is inserted into `sl_message` with `is_reply = 0` and `create_time` set to current timestamp
+
+### Requirement: Frontend API message endpoints
+The frontend API SHALL expose `GET /api/messages` and `POST /api/messages` endpoints handled by the frontend handler's `GetMessages` and `CreateMessage` methods.
+
+#### Scenario: Get messages via API
+- **WHEN** `GET /api/messages` is requested
+- **THEN** it returns Convention A response with message list in `data`
+
+#### Scenario: Create message via API
+- **WHEN** `POST /api/messages` is requested with valid email and content
+- **THEN** it creates a message record and returns the created message

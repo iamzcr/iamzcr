@@ -23,6 +23,7 @@ type ArticleDetailData struct {
 	Category  models.Category  `json:"category"`
 	Directory models.Directory `json:"directory"`
 	Tags      []models.Tags    `json:"tags"`
+	ReadCount int64            `json:"read_count"`
 }
 
 type ArticleDetailResponse struct {
@@ -55,4 +56,10 @@ type WebsiteResponse struct {
 	Code    int         `json:"code"`
 	Message string      `json:"message"`
 	Data    WebsiteData `json:"data"`
+}
+
+type MessageListResponse struct {
+	Code    int              `json:"code"`
+	Message string           `json:"message"`
+	Data    []models.Message `json:"data"`
 }
