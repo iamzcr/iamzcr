@@ -43,15 +43,17 @@ func (s *AttachService) Upload(file *multipart.FileHeader, assetDir string) (*mo
 	}
 
 	link := "/asset/" + filename
+	cdnLink := ""
 
 	var cdn models.Website
 	if err := models.DB.Where("`key` = ?", "cdn_url").First(&cdn).Error; err == nil && cdn.Value != "" {
-		link = cdn.Value + "/asset/" + filename
+		cdnLink = cdn.Value + "/asset/" + filename
 	}
 
 	attach := models.Attach{
 		Name:       file.Filename,
 		Link:       link,
+		CdnLink:    cdnLink,
 		Path:       savePath,
 		Status:     1,
 		Type:       1,

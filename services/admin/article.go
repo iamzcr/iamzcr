@@ -114,7 +114,49 @@ func toInt(v interface{}) int {
 	}
 }
 
+func stripCDNPrefix(path string) string {
+	if path == "" {
+		return ""
+	}
+	if idx := findNth(path, "/", 3); idx != -1 && (len(path) > 7 && path[:7] == "http://" || len(path) > 8 && path[:8] == "https://") {
+		path = path[idx:]
+	}
+	if len(path) > 0 && path[0] == '/' {
+		path = path[1:]
+	}
+	return path
+}
+
+func findNth(s, sep string, n int) int {
+	idx := 0
+	for i := 0; i < n; i++ {
+		pos := indexFrom(s, sep, idx)
+		if pos == -1 {
+			return -1
+		}
+		idx = pos + len(sep)
+	}
+	return idx
+}
+
+func indexFrom(s, sep string, start int) int {
+	if start >= len(s) {
+		return -1
+	}
+	for i := start; i <= len(s)-len(sep); i++ {
+		if s[i:i+len(sep)] == sep {
+			return i
+		}
+	}
+	return -1
+}
+
 func (s *ArticleService) Create(data map[string]interface{}, tagIDs []int) *models.Article {
+	publicTime := toInt(data["public_time"])
+	if publicTime == 0 {
+		publicTime = int(time.Now().Unix())
+	}
+
 	article := models.Article{
 		Cid:        toInt(data["cid"]),
 		Did:        toInt(data["did"]),
@@ -122,14 +164,14 @@ func (s *ArticleService) Create(data map[string]interface{}, tagIDs []int) *mode
 		Desc:       data["desc"].(string),
 		Keyword:    data["keyword"].(string),
 		Author:     data["author"].(string),
-		Thumb:      data["thumb"].(string),
+		Thumb:      stripCDNPrefix(data["thumb"].(string)),
 		Summary:    data["summary"].(string),
 		Content:    data["content"].(string),
 		IsHot:      toInt(data["is_hot"]),
 		IsNew:      toInt(data["is_new"]),
 		IsRecom:    toInt(data["is_recom"]),
 		Weight:     toInt(data["weight"]),
-		PublicTime: toInt(data["public_time"]),
+		PublicTime: publicTime,
 		Status:     toInt(data["status"]),
 		Month:      data["month"].(string),
 		CreateTime: int(time.Now().Unix()),
@@ -175,7 +217,7 @@ func (s *ArticleService) Update(id int, data map[string]interface{}, tagIDs []in
 		article.Author = v
 	}
 	if v, ok := data["thumb"].(string); ok {
-		article.Thumb = v
+		article.Thumb = stripCDNPrefix(v)
 	}
 	if v, ok := data["summary"].(string); ok {
 		article.Summary = v

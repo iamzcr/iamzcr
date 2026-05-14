@@ -20,7 +20,8 @@ const publishTargetId = ref(0)
 
 function formatDate(time: number | string) {
   if (!time) return '-'
-  const date = new Date(time)
+  const ts = typeof time === 'string' ? parseInt(time) : time
+  const date = new Date(ts * 1000)
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')
   const d = String(date.getDate()).padStart(2, '0')
@@ -38,6 +39,7 @@ const columns = [
   { title: '微信', key: 'wechat', width: 90, render: (row: any) => h(NTag, { type: wechatStatusMap.value[row.id] ? 'success' : 'default', size: 'small' }, () => wechatStatusMap.value[row.id] ? '已发布' : '未发布') },
   { title: '热门', key: 'is_hot', width: 60, render: (row: any) => h(NTag, { type: row.is_hot === 1 ? 'error' : 'default', size: 'small' }, () => row.is_hot === 1 ? '是' : '否') },
   { title: '权重', key: 'weight', width: 60 },
+  { title: '发布时间', key: 'public_time', width: 180, render: (row: any) => formatDate(row.public_time) },
   { title: '创建时间', key: 'create_time', width: 180, render: (row: any) => formatDate(row.create_time) },
   { title: '操作', key: 'actions', width: 220, render: (row: any) => h(NSpace, () => [
     h(NButton, { size: 'small', onClick: () => router.push(`/articles/edit/${row.id}`) }, () => '编辑'),

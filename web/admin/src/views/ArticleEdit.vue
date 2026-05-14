@@ -5,6 +5,7 @@ import { NForm, NFormItem, NInput, NButton, NCard, NSwitch, NInputNumber, NSelec
 import { Editor } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
+import Image from '@tiptap/extension-image'
 import { articleApi, categoryApi, directoryApi, tagsApi, attachApi, websiteApi, platformApi } from '../api'
 import { markdownToHtml, htmlToMarkdown } from '../utils/markdown'
 
@@ -65,7 +66,7 @@ function initRichEditor() {
   nextTick(() => {
     richEditor.value = new Editor({
       element: richEditorDom.value,
-      extensions: [StarterKit, Underline],
+      extensions: [StarterKit, Underline, Image],
       content: markdownToHtml(form.value.content),
       onUpdate: ({ editor }) => {
         form.value.content = htmlToMarkdown(editor.getHTML())
@@ -100,6 +101,15 @@ function getFullUrl(path: string) {
   return cdnUrl.value.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '')
 }
 
+function stripCDNPrefix(path: string) {
+  if (!path) return ''
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    const u = new URL(path)
+    path = u.pathname
+  }
+  return path.replace(/^\/+/, '')
+}
+
 async function loadData() {
   const [catRes, dirRes, tagRes, webRes, platRes] = await Promise.all([
     categoryApi.list({ page: 1, page_size: 1000 }),
@@ -126,7 +136,7 @@ async function loadArticle() {
       desc: data.article?.desc || data.desc || '',
       keyword: data.article?.keyword || data.keyword || '',
       author: data.article?.author || data.author || 'nicholas',
-      thumb: data.article?.thumb || data.thumb || '',
+      thumb: stripCDNPrefix(data.article?.thumb || data.thumb || ''),
       summary: data.article?.summary || data.summary || '',
       content: data.article?.content || data.content || '',
       is_hot: data.article?.is_hot || data.is_hot || 0,
@@ -155,11 +165,36 @@ async function openCoverModal() {
 
 function selectCover(img: any) {
   showCoverModal.value = false
-  form.value.thumb = img.link
+  form.value.thumb = stripCDNPrefix(img.link)
 }
 
 function clearCover() {
   form.value.thumb = ''
+}
+
+const showImageModal = ref(false)
+const imageLibraryItems = ref<any[]>([])
+const imageLibraryLoading = ref(false)
+
+async function openImageModal() {
+  showImageModal.value = true
+  imageLibraryLoading.value = true
+  try {
+    const res = await attachApi.list({ page: 1, page_size: 1000, type: 1 })
+    imageLibraryItems.value = res.data.data.list || res.data.data || []
+  } finally {
+    imageLibraryLoading.value = false
+  }
+}
+
+function insertImage(img: any) {
+  showImageModal.value = false
+  const imgUrl = getFullUrl(img.link)
+  if (editorMode.value === 'markdown') {
+    form.value.content += `\n![${img.name}](${imgUrl})\n`
+  } else {
+    richEditor.value?.chain().focus().setImage({ src: imgUrl, alt: img.name }).run()
+  }
 }
 
 async function save() {
@@ -276,10 +311,13 @@ onBeforeUnmount(() => {
       </div>
       
       <n-form-item label="编辑模式" path="editorMode">
-        <n-radio-group v-model:value="editorMode">
-          <n-radio-button value="markdown">Markdown</n-radio-button>
-          <n-radio-button value="richtext">富文本</n-radio-button>
-        </n-radio-group>
+        <n-space align="center">
+          <n-radio-group v-model:value="editorMode">
+            <n-radio-button value="markdown">Markdown</n-radio-button>
+            <n-radio-button value="richtext">富文本</n-radio-button>
+          </n-radio-group>
+          <n-button size="small" @click="openImageModal">插入图片</n-button>
+        </n-space>
       </n-form-item>
 
       <n-form-item label="内容" path="content" class="content-form-item">
@@ -329,6 +367,24 @@ onBeforeUnmount(() => {
           <div style="font-size: 12px; text-align: center; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ img.name }}</div>
         </div>
         <div v-if="coverImages.length === 0 && !coverLoading" style="padding: 24px; color: #999; text-align: center; width: 100%;">
+          暂无上传图片，请先在附件管理中上传
+        </div>
+      </div>
+    </n-modal>
+    <n-modal v-model:show="showImageModal" preset="card" title="插入图片" style="width: 720px">
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; max-height: 500px; overflow-y: auto;">
+        <div
+          v-for="img in imageLibraryItems"
+          :key="img.id"
+          style="width: 160px; cursor: pointer; border: 2px solid transparent; border-radius: 4px; padding: 4px;"
+          @click="insertImage(img)"
+          @mouseenter="($event.target as HTMLElement).style.borderColor = '#2080f0'"
+          @mouseleave="($event.target as HTMLElement).style.borderColor = 'transparent'"
+        >
+          <n-image width="150" height="150" :src="getFullUrl(img.link)" style="object-fit: cover; border-radius: 4px;" />
+          <div style="font-size: 12px; text-align: center; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ img.name }}</div>
+        </div>
+        <div v-if="imageLibraryItems.length === 0 && !imageLibraryLoading" style="padding: 24px; color: #999; text-align: center; width: 100%;">
           暂无上传图片，请先在附件管理中上传
         </div>
       </div>
