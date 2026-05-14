@@ -29,23 +29,50 @@ func (s *WebsiteService) Get() (map[string]interface{}, error) {
 	return data, nil
 }
 
+type WebsiteInput struct {
+	Key          string `json:"key"`
+	Value        string `json:"value"`
+	IsToFrontend int    `json:"is_to_frontend"`
+}
+
 func (s *WebsiteService) Upsert(input map[string]string) error {
 	for key, value := range input {
-		var website models.Website
-		if err := models.DB.Where("`key` = ?", key).First(&website).Error; err == nil {
-			website.Value = value
-			website.UpdateTime = int(time.Now().Unix())
-			models.DB.Save(&website)
-		} else {
-			website := models.Website{
-				Key:        key,
-				Value:      value,
-				Staus:      1,
-				CreateTime: int(time.Now().Unix()),
-				UpdateTime: int(time.Now().Unix()),
-			}
-			models.DB.Create(&website)
+		if err := s.upsertOne(key, value, 0); err != nil {
+			return err
 		}
+	}
+	return nil
+}
+
+func (s *WebsiteService) UpsertAll(items []WebsiteInput) error {
+	for _, item := range items {
+		if err := s.upsertOne(item.Key, item.Value, item.IsToFrontend); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *WebsiteService) upsertOne(key, value string, isToFrontend int) error {
+	var website models.Website
+	if err := models.DB.Where("`key` = ?", key).First(&website).Error; err == nil {
+		website.Value = value
+		website.IsToFrontend = isToFrontend
+		website.UpdateTime = int(time.Now().Unix())
+		models.DB.Save(&website)
+	} else {
+		if isToFrontend == 0 {
+			isToFrontend = 1
+		}
+		website := models.Website{
+			Key:          key,
+			Value:        value,
+			Staus:        1,
+			IsToFrontend: isToFrontend,
+			CreateTime:   int(time.Now().Unix()),
+			UpdateTime:   int(time.Now().Unix()),
+		}
+		models.DB.Create(&website)
 	}
 	return nil
 }

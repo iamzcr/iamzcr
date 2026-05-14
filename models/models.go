@@ -128,13 +128,14 @@ func (ArticleTags) TableName() string {
 }
 
 type Website struct {
-	ID         int    `gorm:"primaryKey;column:id" json:"id"`
-	Name       string `gorm:"column:name;size:255" json:"name"`
-	Key        string `gorm:"column:key;size:32" json:"key"`
-	Value      string `gorm:"column:value;type:text" json:"value"`
-	Staus      int    `gorm:"column:staus" json:"staus"`
-	UpdateTime int    `gorm:"column:update_time" json:"update_time"`
-	CreateTime int    `gorm:"column:create_time" json:"create_time"`
+	ID            int    `gorm:"primaryKey;column:id" json:"id"`
+	Name          string `gorm:"column:name;size:255" json:"name"`
+	Key           string `gorm:"column:key;size:32" json:"key"`
+	Value         string `gorm:"column:value;type:text" json:"value"`
+	Staus         int    `gorm:"column:staus" json:"staus"`
+	IsToFrontend  int    `gorm:"column:is_to_frontend" json:"is_to_frontend"`
+	UpdateTime    int    `gorm:"column:update_time" json:"update_time"`
+	CreateTime    int    `gorm:"column:create_time" json:"create_time"`
 }
 
 func (Website) TableName() string {
