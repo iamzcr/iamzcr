@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { NInput, NButton, NSpace, NForm, NFormItem, NCard, NDivider, NEmpty, useMessage } from 'naive-ui'
+import { NInput, NButton, NSpace, NForm, NFormItem, NCard, NDivider, NEmpty, NMessageProvider, useMessage } from 'naive-ui'
 import { messageApi } from '../api'
 
 const msg = useMessage()
@@ -52,7 +52,8 @@ onMounted(loadMessages)
 </script>
 
 <template>
-  <div class="page-wrap messages-page">
+  <n-message-provider>
+    <div class="page-wrap messages-page">
     <n-card title="留言板" class="form-card">
       <n-form :model="form" label-placement="top">
         <n-space vertical>
@@ -97,6 +98,7 @@ onMounted(loadMessages)
     </div>
     <n-empty v-else-if="!loading" description="暂无留言，来做第一个留言的人吧" />
   </div>
+  </n-message-provider>
 </template>
 
 <style scoped>
