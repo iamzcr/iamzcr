@@ -1,0 +1,556 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "堆栈人生博客系统 - 前台公开 API，供 Web 前端和微信小程序使用",
+        "title": "堆栈人生 Frontend API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8082",
+    "basePath": "/api",
+    "paths": {
+        "/articles": {
+            "get": {
+                "description": "获取已发布文章列表，支持分页和按分类/目录/标签过滤",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Frontend API"
+                ],
+                "summary": "文章列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "分类ID",
+                        "name": "cid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "目录ID",
+                        "name": "did",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "标签ID",
+                        "name": "tid",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/frontend.ArticleListResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/articles/{id}": {
+            "get": {
+                "description": "获取单篇文章详情，包含分类、目录和标签信息",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Frontend API"
+                ],
+                "summary": "文章详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "文章ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/frontend.ArticleDetailResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/categories": {
+            "get": {
+                "description": "获取所有启用的文章分类",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Frontend API"
+                ],
+                "summary": "分类列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/frontend.CategoryListResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/directories": {
+            "get": {
+                "description": "获取所有启用的文章目录",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Frontend API"
+                ],
+                "summary": "目录列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/frontend.DirectoryListResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tags": {
+            "get": {
+                "description": "获取所有启用的文章标签",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Frontend API"
+                ],
+                "summary": "标签列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/frontend.TagListResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/website": {
+            "get": {
+                "description": "获取网站配置信息（键值对形式，如站点名称、CDN地址等）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Frontend API"
+                ],
+                "summary": "网站设置",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/frontend.WebsiteResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "frontend.ArticleDetailData": {
+            "type": "object",
+            "properties": {
+                "article": {
+                    "$ref": "#/definitions/models.Article"
+                },
+                "category": {
+                    "$ref": "#/definitions/models.Category"
+                },
+                "directory": {
+                    "$ref": "#/definitions/models.Directory"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Tags"
+                    }
+                }
+            }
+        },
+        "frontend.ArticleDetailResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/frontend.ArticleDetailData"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "frontend.ArticleListData": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers_frontend.ArticleWithTags"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "frontend.ArticleListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/frontend.ArticleListData"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "frontend.CategoryListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Category"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "frontend.DirectoryListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Directory"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "frontend.TagListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Tags"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "frontend.WebsiteData": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "string"
+            }
+        },
+        "frontend.WebsiteResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/frontend.WebsiteData"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers_frontend.ArticleWithTags": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "cid": {
+                    "type": "integer"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "create_time": {
+                    "type": "integer"
+                },
+                "desc": {
+                    "type": "string"
+                },
+                "did": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_hot": {
+                    "type": "integer"
+                },
+                "is_new": {
+                    "type": "integer"
+                },
+                "is_recom": {
+                    "type": "integer"
+                },
+                "keyword": {
+                    "type": "string"
+                },
+                "month": {
+                    "type": "string"
+                },
+                "public_time": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Tags"
+                    }
+                },
+                "thumb": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "update_time": {
+                    "type": "integer"
+                },
+                "weight": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.Article": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "cid": {
+                    "type": "integer"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "create_time": {
+                    "type": "integer"
+                },
+                "desc": {
+                    "type": "string"
+                },
+                "did": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_hot": {
+                    "type": "integer"
+                },
+                "is_new": {
+                    "type": "integer"
+                },
+                "is_recom": {
+                    "type": "integer"
+                },
+                "keyword": {
+                    "type": "string"
+                },
+                "month": {
+                    "type": "string"
+                },
+                "public_time": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "thumb": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "update_time": {
+                    "type": "integer"
+                },
+                "weight": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.Category": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "create_time": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "mark": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "parent": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "update_time": {
+                    "type": "integer"
+                },
+                "weight": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.Directory": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "cid": {
+                    "type": "integer"
+                },
+                "create_time": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "mark": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "parent": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "update_time": {
+                    "type": "integer"
+                },
+                "weight": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.Tags": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "create_time": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_hot": {
+                    "type": "integer"
+                },
+                "mark": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "update_time": {
+                    "type": "integer"
+                },
+                "weight": {
+                    "type": "integer"
+                }
+            }
+        }
+    }
+}

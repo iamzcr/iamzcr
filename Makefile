@@ -71,3 +71,10 @@ all: build
 	@echo "Starting services..."
 	@echo "Admin API: http://localhost:8081"
 	@echo "Frontend API: http://localhost:8082"
+
+# Generate Swagger API docs for frontend
+docs:
+	@echo "Generating Swagger docs for frontend API..."
+	swag init -g cmd/frontend/main.go -o docs/
+	@rm -f docs/docs.go
+	@echo "Swagger docs generated in docs/"

@@ -28,5 +28,6 @@ func SetupFrontendRoutes(r *gin.Engine, cfg *config.Config) {
 		api.GET("/website", frontendHandler.GetWebsite)
 	}
 
+	r.Static("/api/docs", "./docs")
 	r.Static("/asset", cfg.AssetDir())
 }
