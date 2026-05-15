@@ -78,8 +78,9 @@ func (h *AdminHandler) GetAdminInfo(c *gin.Context) {
 func (h *AdminHandler) ListArticles(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	keyword := c.DefaultQuery("keyword", "")
 
-	result, total := h.articleSvc.ListWithTags(page, pageSize)
+	result, total := h.articleSvc.ListWithTags(page, pageSize, keyword)
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,

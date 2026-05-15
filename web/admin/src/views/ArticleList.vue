@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
 import { useRouter } from 'vue-router'
-import { NDataTable, NButton, NTag, NSpace, NModal, NCheckboxGroup, NCheckbox, useMessage } from 'naive-ui'
+import { NDataTable, NButton, NTag, NSpace, NModal, NCheckboxGroup, NCheckbox, NInput, useMessage } from 'naive-ui'
 import { articleApi, platformApi } from '../api'
 
 const router = useRouter()
@@ -13,6 +13,7 @@ const platforms = ref<any[]>([])
 const wechatStatusMap = ref<Record<number, boolean>>({})
 const publishingMap = ref<Record<number, boolean>>({})
 const pagination = ref({ page: 1, pageSize: 10, itemCount: 0 })
+const searchKeyword = ref('')
 
 const showPublishModal = ref(false)
 const selectedPlatformIds = ref<number[]>([])
@@ -51,7 +52,7 @@ const columns = [
 async function loadArticles() {
   loading.value = true
   try {
-    const res = await articleApi.list({ page: pagination.value.page, page_size: pagination.value.pageSize })
+    const res = await articleApi.list({ page: pagination.value.page, page_size: pagination.value.pageSize, keyword: searchKeyword.value })
     articles.value = res.data.data.list
     pagination.value.itemCount = res.data.data.total
     loadWechatStatus()
@@ -116,7 +117,17 @@ onMounted(() => {
 <template>
   <div class="page-wrap">
     <div class="page-toolbar">
-      <n-button type="primary" @click="router.push('/articles/new')">新建文章</n-button>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <n-input
+          v-model:value="searchKeyword"
+          placeholder="搜索文章标题..."
+          clearable
+          style="width: 240px"
+          @keyup.enter="pagination.page = 1; loadArticles()"
+          @clear="pagination.page = 1; loadArticles()"
+        />
+        <n-button type="primary" @click="router.push('/articles/new')">新建文章</n-button>
+      </div>
     </div>
     <n-data-table
       :columns="columns"

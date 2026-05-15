@@ -21,7 +21,7 @@ function closeMobileMenu() {
 
 function onSearch() {
   closeMobileMenu()
-  router.push('/')
+  router.push({ path: '/', query: searchKeyword.value ? { keyword: searchKeyword.value } : {} })
 }
 
 // Close mobile menu on route change

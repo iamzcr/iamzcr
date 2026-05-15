@@ -15,7 +15,7 @@ type ArticleWithTags struct {
 	Tags []models.Tags `json:"tags"`
 }
 
-func (s *ArticleService) ListPublished(page, pageSize int, cid, did, tid string) ([]ArticleWithTags, int64) {
+func (s *ArticleService) ListPublished(page, pageSize int, cid, did, tid, keyword string) ([]ArticleWithTags, int64) {
 	var articles []models.Article
 	var total int64
 
@@ -33,6 +33,9 @@ func (s *ArticleService) ListPublished(page, pageSize int, cid, did, tid string)
 			return []ArticleWithTags{}, 0
 		}
 		query = query.Where("id IN ?", articleIDs)
+	}
+	if keyword != "" {
+		query = query.Where("title LIKE ?", "%"+keyword+"%")
 	}
 
 	query.Count(&total)

@@ -321,6 +321,10 @@ paths:
         in: query
         name: tid
         type: integer
+      - description: 标题模糊搜索
+        in: query
+        name: keyword
+        type: string
       produces:
       - application/json
       responses:
