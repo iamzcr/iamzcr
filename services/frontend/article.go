@@ -37,7 +37,7 @@ func (s *ArticleService) ListPublished(page, pageSize int, cid, did, tid string)
 
 	query.Count(&total)
 	offset := (page - 1) * pageSize
-	query.Offset(offset).Limit(pageSize).Order("create_time DESC").Find(&articles)
+	query.Offset(offset).Limit(pageSize).Order("public_time DESC").Find(&articles)
 
 	result := make([]ArticleWithTags, len(articles))
 	for i, article := range articles {
