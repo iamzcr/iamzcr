@@ -47,7 +47,8 @@ func NewFrontendHandler(
 //	@Param			page_size	query		int	false	"每页数量"	default(10)
 //	@Param			cid			query		int	false	"分类ID"
 //	@Param			did			query		int	false	"目录ID"
-//	@Param			tid			query		int	false	"标签ID"
+//	@Param			tid			query		int		false	"标签ID"
+//	@Param			keyword		query		string	false	"标题模糊搜索"
 //	@Success		200			{object}	ArticleListResponse
 //	@Router			/articles [get]
 func (h *FrontendHandler) ListArticles(c *gin.Context) {
@@ -56,8 +57,9 @@ func (h *FrontendHandler) ListArticles(c *gin.Context) {
 	cid := c.DefaultQuery("cid", "")
 	did := c.DefaultQuery("did", "")
 	tid := c.DefaultQuery("tid", "")
+	keyword := c.DefaultQuery("keyword", "")
 
-	result, total := h.articleSvc.ListPublished(page, pageSize, cid, did, tid)
+	result, total := h.articleSvc.ListPublished(page, pageSize, cid, did, tid, keyword)
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,

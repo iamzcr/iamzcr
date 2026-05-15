@@ -17,11 +17,14 @@ type ArticleWithTags struct {
 	Tags []models.Tags `json:"tags"`
 }
 
-func (s *ArticleService) List(page, pageSize int) ([]models.Article, int64) {
+func (s *ArticleService) List(page, pageSize int, keyword string) ([]models.Article, int64) {
 	var articles []models.Article
 	var total int64
 
 	query := models.DB.Model(&models.Article{})
+	if keyword != "" {
+		query = query.Where("title LIKE ?", "%"+keyword+"%")
+	}
 	query.Count(&total)
 
 	offset := (page - 1) * pageSize
@@ -30,8 +33,8 @@ func (s *ArticleService) List(page, pageSize int) ([]models.Article, int64) {
 	return articles, total
 }
 
-func (s *ArticleService) ListWithTags(page, pageSize int) ([]ArticleWithTags, int64) {
-	articles, total := s.List(page, pageSize)
+func (s *ArticleService) ListWithTags(page, pageSize int, keyword string) ([]ArticleWithTags, int64) {
+	articles, total := s.List(page, pageSize, keyword)
 
 	result := make([]ArticleWithTags, len(articles))
 	for i, article := range articles {

@@ -44,6 +44,8 @@ async function loadData() {
     if (currentType.value === 'category' && currentId.value) articleParams.cid = currentId.value
     if (currentType.value === 'directory' && currentId.value) articleParams.did = currentId.value
     if (currentType.value === 'tag' && currentId.value) articleParams.tid = currentId.value
+    const kw = route.query.keyword as string
+    if (kw) articleParams.keyword = kw
 
     const [articleRes, latestRes, catRes, dirRes, tagRes] = await Promise.all([
       articleApi.list(articleParams),
@@ -108,6 +110,11 @@ watch(() => route.params.id, () => {
 })
 
 watch(() => route.name, () => {
+  page.value = 1
+  loadData()
+})
+
+watch(() => route.query.keyword, () => {
   page.value = 1
   loadData()
 })

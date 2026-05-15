@@ -51,6 +51,12 @@
                         "description": "标签ID",
                         "name": "tid",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "标题模糊搜索",
+                        "name": "keyword",
+                        "in": "query"
                     }
                 ],
                 "responses": {
